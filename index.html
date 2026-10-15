@@ -1,0 +1,3621 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#12161d">
+<title>Магазин</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0e1219;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#e8eef7}
+#app{position:fixed;inset:0;overflow:hidden}
+#game{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#game.dragging{cursor:grabbing}
+
+.modal-body::-webkit-scrollbar,
+.tabs::-webkit-scrollbar,
+.cat-sel::-webkit-scrollbar{width:8px;height:8px}
+.modal-body::-webkit-scrollbar-track,
+.tabs::-webkit-scrollbar-track,
+.cat-sel::-webkit-scrollbar-track{background:#0f151d;border-radius:8px}
+.modal-body::-webkit-scrollbar-thumb,
+.tabs::-webkit-scrollbar-thumb,
+.cat-sel::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#3b4d66,#2a3648);border-radius:8px;
+  border:1px solid #1b2330}
+.modal-body,.tabs,.cat-sel{scrollbar-width:thin;scrollbar-color:#3b4d66 #0f151d}
+
+#topbar{position:absolute;top:0;left:0;right:0;height:52px;display:flex;align-items:center;gap:6px;
+  padding:0 8px;background:linear-gradient(180deg,rgba(14,18,25,.96),rgba(14,18,25,.72));
+  backdrop-filter:blur(6px);z-index:20;pointer-events:auto}
+.stat{display:flex;align-items:center;gap:5px;background:#1b2330;border:1px solid #2b3648;
+  border-radius:12px;padding:5px 10px;font-weight:700;font-size:14px;white-space:nowrap}
+.stat svg{width:18px;height:18px;flex:none}
+#moneyVal{color:#ffd257}
+#lvlChip{background:linear-gradient(180deg,#6c4bd4,#4a2fa8);border-color:#8b6bff;color:#fff;
+  padding:4px 8px;font-size:12px;gap:4px;flex-direction:column;align-items:stretch;min-width:70px}
+#lvlChip .ln{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px}
+#lvlChip .lvlXP{height:4px;border-radius:2px;background:rgba(0,0,0,.35);overflow:hidden;margin-top:2px}
+#lvlChip .lvlXP i{display:block;height:100%;background:linear-gradient(90deg,#ffd257,#ff9500);
+  border-radius:2px;transition:width .3s}
+#prestigeChip{background:linear-gradient(180deg,#c9a227,#8a6a10);border-color:#ffd257;color:#fff;
+  font-size:11px;font-weight:800;display:none;gap:3px}
+#bonusChip{background:linear-gradient(180deg,#e06b1c,#a8420c);border-color:#ffb070;color:#fff;
+  font-size:12px;font-weight:800;display:none;gap:4px;animation:bonusPulse 1s ease-in-out infinite}
+@keyframes bonusPulse{50%{box-shadow:0 0 14px rgba(255,150,60,.85)}}
+.spacer{flex:1}
+.iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid #2b3648;background:#1b2330;
+  color:#cfe0f5;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;
+  transition:.15s;padding:0;flex:none}
+.iconbtn:active{transform:scale(.93);background:#243044}
+.iconbtn svg{width:21px;height:21px}
+.badge{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;border-radius:8px;background:#ff4d5e;
+  color:#fff;font-size:10px;line-height:16px;text-align:center;padding:0 4px;font-weight:700}
+
+#bottombar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:6px;padding:8px 8px 10px;
+  background:linear-gradient(0deg,rgba(14,18,25,.98),rgba(14,18,25,.7));z-index:20}
+.botbtn{flex:1;height:52px;border-radius:14px;border:1px solid #2b3648;background:#1b2330;color:#dce8f8;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;
+  font-weight:600;cursor:pointer;transition:.15s;padding:0;position:relative}
+.botbtn svg{width:22px;height:22px}
+.botbtn:active{transform:scale(.95);background:#243044}
+.botbtn.primary{background:linear-gradient(180deg,#2e7d5b,#1f5f44);border-color:#3aa477;color:#eafff4}
+.botbtn .dot{position:absolute;top:6px;right:10px;width:9px;height:9px;border-radius:50%;background:#ff4d5e;
+  box-shadow:0 0 8px rgba(255,80,90,.9);display:none;animation:dotPulse 1.4s ease-in-out infinite}
+@keyframes dotPulse{50%{transform:scale(1.3)}}
+
+/* --- Кнопки зума --- */
+#zoomCtrl{position:absolute;right:10px;bottom:78px;z-index:25;display:flex;flex-direction:column;gap:6px}
+.zoomb{width:38px;height:38px;border-radius:12px;border:1px solid #2b3648;background:rgba(27,35,48,.92);
+  color:#cfe0f5;font-size:22px;font-weight:700;cursor:pointer;backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;padding:0;transition:.15s;line-height:1}
+.zoomb:active{transform:scale(.93);background:#243044}
+
+body.tutorial-on .botbtn,body.tutorial-on .iconbtn{pointer-events:none;opacity:.35;filter:grayscale(.4)}
+body.tutorial-on .botbtn.tutorial-active,body.tutorial-on .iconbtn.tutorial-active{
+  pointer-events:auto;opacity:1;filter:none;
+  box-shadow:0 0 0 2px #4a89ff,0 0 16px rgba(74,137,255,.7);
+  animation:pulseGlow 1.6s ease-in-out infinite}
+@keyframes pulseGlow{50%{box-shadow:0 0 0 2px #4a89ff,0 0 24px rgba(74,137,255,1)}}
+
+.levelup-overlay{position:fixed;inset:0;z-index:200;
+  background:radial-gradient(circle at center,rgba(74,137,255,.35),rgba(0,0,0,.82));
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  animation:luFadeIn .4s ease-out}
+@keyframes luFadeIn{from{opacity:0}}
+.levelup-content{text-align:center;position:relative;padding:20px;
+  animation:luPop .7s cubic-bezier(0.18,1.15,0.55,1)}
+@keyframes luPop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.levelup-burst{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:320px;height:320px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,210,87,.75),transparent 65%);
+  animation:luBurst 1.4s ease-out;pointer-events:none}
+@keyframes luBurst{0%{transform:translate(-50%,-50%) scale(.2);opacity:1}100%{transform:translate(-50%,-50%) scale(2.4);opacity:0}}
+.levelup-num{font-size:110px;font-weight:900;line-height:1;position:relative;
+  background:linear-gradient(180deg,#fff5c8,#ffd257 45%,#ff9500);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 30px rgba(255,210,87,.9))}
+.levelup-title{font-size:28px;font-weight:900;letter-spacing:3px;color:#fff;
+  text-shadow:0 0 24px #4a89ff,0 0 8px #4a89ff;margin-top:4px;
+  animation:luText 1.2s ease-in-out infinite alternate}
+@keyframes luText{from{text-shadow:0 0 20px #4a89ff,0 0 6px #4a89ff}
+  to{text-shadow:0 0 40px #4a89ff,0 0 14px #4a89ff,0 0 60px #8b6bff}}
+.levelup-sub{margin-top:16px;font-size:14px;color:#dbe6f8;opacity:.9;font-weight:600}
+.levelup-hint{margin-top:6px;font-size:12px;color:#8798ad}
+
+#banner{position:absolute;left:0;right:0;bottom:0;height:0;z-index:19;pointer-events:none}
+
+#modalRoot{position:absolute;inset:0;z-index:60;display:none}
+.modal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(5,8,12,.72);backdrop-filter:blur(3px);padding:10px}
+.modal-box{width:min(700px,96vw);max-height:86vh;background:#161d28;border:1px solid #2b3648;
+  border-radius:18px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.6);
+  animation:pop .18s ease-out}
+@keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;
+  border-bottom:1px solid #242e3d;background:#1b2330;flex:none}
+.modal-head h3{margin:0;font-size:16px;font-weight:700}
+.close-btn{width:34px;height:34px;border-radius:10px;border:none;background:#26313f;color:#cfe0f5;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.close-btn:active{background:#334052}
+.modal-body{overflow-y:auto;padding:10px;flex:1;-webkit-overflow-scrolling:touch}
+.tabs{display:flex;gap:6px;padding:8px 10px 0;flex:none;overflow-x:auto}
+.tab{padding:8px 14px;border-radius:10px;background:#1b2330;border:1px solid #2b3648;color:#9fb0c5;
+  font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.tab.active{background:#2d6cdf;border-color:#4a89ff;color:#fff}
+
+.row{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;background:#1a212c;
+  border:1px solid #232d3b;margin-bottom:7px}
+.row.locked{opacity:.55}
+.row .ic{width:38px;height:38px;flex:none;border-radius:9px;background:#0f151d;display:flex;
+  align-items:center;justify-content:center;overflow:hidden;position:relative}
+.row .ic img{width:32px;height:32px;display:block}
+.row .ic .lock{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;
+  align-items:center;justify-content:center;color:#ffd257;font-size:11px;font-weight:800}
+.row .nm{flex:1;min-width:0}
+.row .nm b{display:block;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .nm span{font-size:11px;color:#8798ad}
+.row .pr{font-size:13px;font-weight:700;color:#ffd257;white-space:nowrap}
+.cat-header{font-size:11px;font-weight:800;color:#8bb4ff;text-transform:uppercase;letter-spacing:1px;
+  padding:10px 4px 4px;border-top:1px solid #232d3b;margin-top:6px}
+.cat-header:first-child{border-top:none;margin-top:0}
+.btn{padding:8px 12px;border-radius:10px;border:none;background:#2d6cdf;color:#fff;font-weight:700;
+  font-size:12.5px;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:active{transform:scale(.95)}
+.btn.g{background:#2e8b57}
+.btn.r{background:#c0392b}
+.btn.y{background:#b8860b}
+.btn.gold{background:linear-gradient(180deg,#c9a227,#8a6a10);color:#fff}
+.btn.ghost{background:#26313f;color:#cfe0f5}
+.btn.locked{background:#2b3648;color:#8798ad}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.sm{padding:6px 9px;font-size:11.5px;border-radius:9px}
+
+#hint{position:absolute;left:50%;transform:translateX(-50%);top:60px;z-index:30;max-width:92vw;
+  background:rgba(28,60,110,.96);border:1px solid #4a89ff;border-radius:14px;padding:10px 14px;
+  font-size:13.5px;font-weight:600;text-align:center;display:none;box-shadow:0 8px 26px rgba(0,0,0,.5)}
+#hint .hintrow{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:8px}
+#toast{position:absolute;left:50%;transform:translateX(-50%);bottom:90px;z-index:80;display:flex;
+  flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.toast{background:rgba(20,26,36,.96);border:1px solid #3a4a61;border-radius:12px;padding:9px 16px;
+  font-size:13px;font-weight:600;animation:tin .25s ease-out;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+@keyframes tin{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+#overlay{position:absolute;inset:0;z-index:100;background:rgba(6,9,14,.92);display:none;
+  align-items:center;justify-content:center;flex-direction:column;gap:14px;text-align:center;padding:24px}
+.spinner{width:46px;height:46px;border:4px solid #2b3648;border-top-color:#4a89ff;border-radius:50%;
+  animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.sec-title{font-size:12px;color:#8798ad;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  margin:12px 4px 7px}
+.empty{text-align:center;color:#6d7d92;font-size:13px;padding:26px 10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.chip{display:inline-flex;align-items:center;gap:5px;background:#1a212c;border:1px solid #232d3b;
+  border-radius:20px;padding:4px 10px;font-size:11.5px;font-weight:600;color:#9fb0c5}
+.progressbar{height:7px;border-radius:4px;background:#0f151d;overflow:hidden;margin-top:6px}
+.progressbar i{display:block;height:100%;background:linear-gradient(90deg,#2d6cdf,#4a89ff);border-radius:4px;
+  transition:width .3s}
+input[type=text]{width:100%;padding:11px 13px;border-radius:11px;border:1px solid #2b3648;background:#0f151d;
+  color:#e8eef7;font-size:14px;outline:none;font-family:inherit}
+input[type=text]:focus{border-color:#4a89ff}
+.switch{width:46px;height:26px;border-radius:14px;background:#2b3648;position:relative;cursor:pointer;
+  transition:.2s;flex:none}
+.switch.on{background:#2e8b57}
+.switch i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;
+  transition:.2s;display:block}
+.switch.on i{left:23px}
+.place-bar{position:absolute;left:50%;transform:translateX(-50%);bottom:78px;z-index:40;display:none;
+  background:rgba(28,60,110,.96);border:1px solid #4a89ff;border-radius:14px;padding:8px 10px;
+  gap:8px;align-items:center;font-size:12.5px;font-weight:600;box-shadow:0 8px 26px rgba(0,0,0,.5)}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+
+  <div id="topbar">
+    <div class="stat">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#ffd257" stroke="#c9a227" stroke-width="1.6"/><path d="M12 7v10M9.5 9.2h4a1.9 1.9 0 010 3.8h-4" stroke="#8a6a10" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg>
+      <span id="moneyVal">0</span>
+    </div>
+    <div class="stat" id="lvlChip">
+      <div class="ln"><span data-i18n="lvlShort">Ур.</span><b id="lvlVal">1</b></div>
+      <div class="lvlXP"><i id="lvlBar" style="width:0%"></i></div>
+    </div>
+    <div class="stat" id="prestigeChip"><span>★</span><b id="prestigeVal">0</b></div>
+    <div class="stat" id="bonusChip">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" fill="#ffd257" stroke="#8a6a10" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      <span id="bonusTime">x2</span>
+    </div>
+    <div class="stat" style="font-size:12px">
+      <svg viewBox="0 0 24 24"><path d="M4 20V9l8-5 8 5v11" fill="none" stroke="#7fd07f" stroke-width="1.8" stroke-linejoin="round"/><rect x="9" y="13" width="6" height="7" fill="#7fd07f" opacity=".55"/></svg>
+      <span id="cellsVal">0</span>
+    </div>
+    <div class="spacer"></div>
+    <button class="iconbtn" id="btnUpgrades" title="Улучшения">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z"/></svg>
+    </button>
+    <button class="iconbtn" id="btnTasks" title="Задания">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>
+      <span class="badge" id="taskBadge" style="display:none">0</span>
+    </button>
+    <button class="iconbtn" id="btnDaily" title="Ежедневная награда">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 12h18M12 8v12"/><path d="M12 8S9.5 3 7.5 4.5 9 8 12 8zM12 8s2.5-5 4.5-3.5S15 8 12 8z"/></svg>
+      <span class="badge" id="dailyBadge" style="display:none">!</span>
+    </button>
+    <button class="iconbtn" id="btnSettings" title="Настройки">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.6 1.6 0 008 19.4a1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H2a2 2 0 110-4h.1A1.6 1.6 0 004.6 8a1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H9a1.6 1.6 0 001-1.5V2a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V9a1.6 1.6 0 001.5 1H22a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z"/></svg>
+    </button>
+  </div>
+
+  <div id="hint"></div>
+  <div class="place-bar" id="placeBar"></div>
+
+  <div id="zoomCtrl">
+    <button class="zoomb" id="zoomIn" title="+">+</button>
+    <button class="zoomb" id="zoomOut" title="−">−</button>
+  </div>
+
+  <div id="bottombar">
+    <button class="botbtn primary" id="btnShop">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M3 6h18l-1.5 12H4.5L3 6z"/><path d="M8 6V5a4 4 0 018 0v1"/></svg>
+      <span data-i18n="shop">Магазин</span>
+    </button>
+    <button class="botbtn" id="btnStock">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg>
+      <span data-i18n="warehouse">Склад</span>
+    </button>
+    <button class="botbtn" id="btnTimeRewards">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span data-i18n="rewards">Награды</span>
+      <span class="dot" id="timeRewardDot"></span>
+    </button>
+    <button class="botbtn" id="btnInvite">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M18 8v6M15 11h6"/></svg>
+      <span data-i18n="friends">Друзья</span>
+    </button>
+  </div>
+
+  <div id="banner"></div>
+  <div id="modalRoot"></div>
+  <div id="toast"></div>
+  <div id="overlay">
+    <div class="spinner"></div>
+    <div style="font-size:15px;font-weight:700" id="overlayText">Загрузка рекламы...</div>
+    <div style="font-size:12.5px;color:#8798ad;max-width:280px">Пожалуйста, подождите. Не нажимайте на экран.</div>
+  </div>
+</div>
+
+<script src="https://vk.com/js/api/xd_connection.js?2"></script>
+<script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+<script>
+/* =========================================================================
+   МАГАЗИН v8 — с пинч-зумом и пузырями поверх всего
+   ========================================================================= */
+'use strict';
+
+/* ------------------------- 1. КОНСТАНТЫ ------------------------- */
+const GW = 11, GH = 10;
+const DOOR = {x: 0, y: 5};
+const OUT_MARGIN = 100;
+const TRUCK_CYCLE = 180;
+const TRUCK_OFFER = 120;
+const TRUCK_BONUS = 120;
+const MARKUP = 1.04;
+
+const CATS = {
+  dairy:{ru:'Молочное',en:'Dairy',c:'#8fd3ff'},
+  bakery:{ru:'Выпечка',en:'Bakery',c:'#e8c07d'},
+  meat:{ru:'Мясо',en:'Meat',c:'#e07a7a'},
+  fish:{ru:'Рыба',en:'Fish',c:'#7ac7e0'},
+  fruits:{ru:'Фрукты',en:'Fruits',c:'#f6a23c'},
+  veg:{ru:'Овощи',en:'Vegetables',c:'#7fd07f'},
+  drinks:{ru:'Напитки',en:'Drinks',c:'#7a9ee0'},
+  sweets:{ru:'Сладкое',en:'Sweets',c:'#e08fc0'},
+  snacks:{ru:'Снеки',en:'Snacks',c:'#d9b25c'},
+  grocery:{ru:'Бакалея',en:'Grocery',c:'#c2a37a'},
+  canned:{ru:'Консервы',en:'Canned',c:'#a0a0b0'},
+  frozen:{ru:'Заморозка',en:'Frozen',c:'#9fd8e8'},
+  household:{ru:'Бытовая химия',en:'Household',c:'#b0b8c0'}
+};
+
+const P_RAW = [
+['Молоко','Milk','dairy','carton',20],['Кефир','Kefir','dairy','bottle',25],
+['Йогурт','Yogurt','dairy','tub',30],['Сметана','Sour cream','dairy','tub',35],
+['Творог','Cottage cheese','dairy','box',45],['Сыр','Cheese','dairy','wedge',90],
+['Масло сливочное','Butter','dairy','box',80],['Ряженка','Ryazhenka','dairy','bottle',28],
+['Хлеб белый','White bread','bakery','bag',25],['Хлеб чёрный','Black bread','bakery','bag',28],
+['Батон','Baguette','bakery','bag',22],['Булочка','Bun','bakery','round',18],
+['Круассан','Croissant','bakery','wrap',40],['Пирожное','Pastry','bakery','box',55],
+['Торт','Cake','bakery','box',250],['Печенье','Cookies','bakery','packet',60],
+['Курица','Chicken','meat','tray',150],['Говядина','Beef','meat','tray',320],
+['Свинина','Pork','meat','tray',260],['Фарш','Minced meat','meat','tray',180],
+['Колбаса','Sausage','meat','wrap',190],['Сосиски','Hot dogs','meat','wrap',140],
+['Ветчина','Ham','meat','wrap',210],['Бекон','Bacon','meat','tray',230],
+['Лосось','Salmon','fish','tray',400],['Тунец','Tuna','fish','can',200],
+['Сельдь','Herring','fish','tray',120],['Креветки','Shrimp','fish','tray',350],
+['Икра','Caviar','fish','jar',900],['Минтай','Pollock','fish','tray',130],
+['Скумбрия','Mackerel','fish','tray',140],['Кальмар','Squid','fish','tray',160],
+['Яблоко','Apple','fruits','apple',15],['Банан','Banana','fruits','banana',20],
+['Апельсин','Orange','fruits','orange',25],['Груша','Pear','fruits','pear',22],
+['Виноград','Grapes','fruits','grapes',60],['Киви','Kiwi','fruits','kiwi',30],
+['Персик','Peach','fruits','peach',35],['Ананас','Pineapple','fruits','pineapple',120],
+['Картофель','Potato','veg','potato',10],['Морковь','Carrot','veg','carrot',12],
+['Лук','Onion','veg','onion',9],['Помидор','Tomato','veg','tomato',18],
+['Огурец','Cucumber','veg','cucumber',16],['Капуста','Cabbage','veg','cabbage',14],
+['Перец','Pepper','veg','pepper',24],['Брокколи','Broccoli','veg','broccoli',40],
+['Вода','Water','drinks','bottle',15],['Сок','Juice','drinks','tetra',45],
+['Кола','Cola','drinks','can',55],['Лимонад','Lemonade','drinks','bottle',50],
+['Чай','Tea','drinks','box',70],['Кофе','Coffee','drinks','packet',120],
+['Квас','Kvass','drinks','bottle',40],['Минералка','Mineral water','drinks','bottle',20],
+['Шоколад','Chocolate','sweets','bar',80],['Конфеты','Candy','sweets','pouch',65],
+['Мармелад','Marmalade','sweets','pouch',55],['Зефир','Marshmallow','sweets','pouch',70],
+['Вафли','Waffles','sweets','packet',45],['Мороженое','Ice cream','sweets','tub',60],
+['Карамель','Caramel','sweets','pouch',30],['Пряники','Gingerbread','sweets','packet',40],
+['Чипсы','Chips','snacks','packet',70],['Сухарики','Croutons','snacks','packet',35],
+['Орешки','Nuts','snacks','packet',150],['Попкорн','Popcorn','snacks','packet',50],
+['Семечки','Sunflower seeds','snacks','packet',30],['Халва','Halva','snacks','box',90],
+['Сушёные кальмары','Dried squid','snacks','packet',110],['Жвачка','Gum','snacks','pouch',25],
+['Макароны','Pasta','grocery','packet',40],['Рис','Rice','grocery','bag',60],
+['Гречка','Buckwheat','grocery','bag',70],['Мука','Flour','grocery','bag',35],
+['Сахар','Sugar','grocery','bag',50],['Соль','Salt','grocery','cylinder',15],
+['Масло растительное','Vegetable oil','grocery','bottle',90],['Овсянка','Oatmeal','grocery','box',45],
+['Кукуруза','Corn','canned','can',55],['Горошек','Peas','canned','can',50],
+['Огурцы консерв.','Pickles','canned','jar',65],['Томаты консерв.','Canned tomatoes','canned','jar',60],
+['Оливки','Olives','canned','jar',120],['Сгущёнка','Condensed milk','canned','can',80],
+['Шпроты','Smoked sprats','canned','can',95],['Джем','Jam','canned','jar',85],
+['Пельмени','Dumplings','frozen','box',180],['Вареники','Vareniki','frozen','box',140],
+['Пицца заморож.','Frozen pizza','frozen','box',200],['Наггетсы','Nuggets','frozen','box',160],
+['Блинчики','Pancakes','frozen','box',130],['Овощная смесь','Veggie mix','frozen','bag',90],
+['Котлеты','Cutlets','frozen','box',170],['Манты','Manti','frozen','box',190],
+['Мыло','Soap','household','bar',25],['Шампунь','Shampoo','household','bottle',130],
+['Зубная паста','Toothpaste','household','tube',90],['Порошок','Detergent','household','box',200]
+];
+
+const PRODUCTS = P_RAW.map((p, i) => ({
+  id: i + 1, ru: p[0], en: p[1], cat: p[2], shape: p[3], cost: p[4],
+  sell: Math.max(p[4] + 1, Math.round(p[4] * MARKUP)),
+  color: CATS[p[2]].c
+}));
+const PROD_BY_ID = {};
+PRODUCTS.forEach(p => PROD_BY_ID[p.id] = p);
+function productLevel(p){ return Math.floor((p.id - 1) / 10) + 1; }
+
+const FURNITURE = {
+  shelf:{ru:'Полка',en:'Shelf',cost:120,cap:6,accepts:null},
+  rack:{ru:'Стеллаж',en:'Rack',cost:320,cap:12,accepts:null},
+  fridge:{ru:'Холодильник',en:'Fridge',cost:520,cap:8,accepts:['dairy','meat','fish','frozen','drinks']},
+  counter:{ru:'Касса',en:'Cashier',cost:280,cap:0,accepts:[]}
+};
+const WALLS = [
+  {ru:'Классика',en:'Classic',cost:0,floor:'#e9e2d3',line:'#d2c8b4'},
+  {ru:'Металл',en:'Metal',cost:1500,floor:'#cfd8e0',line:'#b2bfcb'},
+  {ru:'Дерево',en:'Wood',cost:2600,floor:'#dcb98d',line:'#c5a071'},
+  {ru:'Мрамор',en:'Marble',cost:5200,floor:'#f2f2f6',line:'#dcdce6'},
+  {ru:'Неон',en:'Neon',cost:9000,floor:'#1d2a3a',line:'#2f4a68'}
+];
+const WINDOWS = [
+  {ru:'Обычное',en:'Plain',cost:0},
+  {ru:'Панорамное',en:'Panoramic',cost:2000},
+  {ru:'Витраж',en:'Stained',cost:4500}
+];
+const TASK_DEFS = [
+  {id:'sell',ru:'Продать {n} товаров',en:'Sell {n} items',min:20,max:60,rew:n=>Math.round(n*4)},
+  {id:'earn',ru:'Заработать {n} монет',en:'Earn {n} coins',min:800,max:2500,rew:n=>Math.round(n*0.28)},
+  {id:'serve',ru:'Обслужить {n} покупателей',en:'Serve {n} customers',min:6,max:18,rew:n=>Math.round(n*22)},
+  {id:'buy',ru:'Купить {n} товаров',en:'Buy {n} products',min:25,max:70,rew:n=>Math.round(n*4)},
+  {id:'place',ru:'Установить {n} мебели',en:'Place {n} furniture',min:2,max:6,rew:n=>Math.round(n*70)},
+  {id:'stock',ru:'Разложить {n} товаров',en:'Stock {n} items',min:20,max:55,rew:n=>Math.round(n*4)},
+  {id:'expand',ru:'Расширить на {n} клеток',en:'Expand by {n} cells',min:2,max:6,rew:n=>Math.round(n*80)}
+];
+const TIME_REWARDS = [
+  {min:5,amount:120},{min:10,amount:200},{min:20,amount:380},{min:35,amount:650},
+  {min:50,amount:950},{min:70,amount:1400},{min:100,amount:2000}
+];
+const UPGRADES = {
+  spawn:{name:{ru:'Скорость клиентов',en:'Customer rate'},desc:{ru:'+10% к частоте появления',en:'+10% spawn rate'},costs:[500,1500,4000,10000,25000],max:5},
+  income:{name:{ru:'Прибыль',en:'Profit'},desc:{ru:'+2% к доходу',en:'+2% income'},costs:[1000,2500,6000,15000,35000,80000,180000,400000,900000,2000000],max:10},
+  speed:{name:{ru:'Проворство',en:'Agility'},desc:{ru:'+15% к скорости ходьбы',en:'+15% walk speed'},costs:[800,2500,8000],max:3},
+  xp:{name:{ru:'Опыт',en:'XP gain'},desc:{ru:'+10% опыта за продажи',en:'+10% XP from sales'},costs:[1200,3500,9000,22000,50000],max:5},
+  cap:{name:{ru:'Вместимость',en:'Capacity'},desc:{ru:'+1 место на полке',en:'+1 shelf slot'},costs:[2000,6000,15000,40000],max:4}
+};
+const PRESTIGE_LEVEL = 10;
+const PRESTIGE_BONUS = 0.05;
+
+const STR = {
+  ru:{shop:'Магазин',warehouse:'Склад',friends:'Друзья',settings:'Настройки',rewards:'Награды',
+    tasks:'Задания',daily:'Ежедневная награда',close:'Закрыть',buy:'Купить',
+    cancel:'Отмена',place:'Разместить',money:'Монеты',music:'Музыка',language:'Язык',
+    promo:'Промокод',apply:'Применить',tutorialQ:'Хотите пройти обучение?',
+    tutorialYes:'Пройти обучение',tutorialSkip:'Пропустить',items:'Товары',furniture:'Мебель',
+    decor:'Оформление',expand:'Расширение',autoStock:'Разложить всё',
+    nothing:'Пусто',reward:'Награда',claim:'Забрать',claimed:'Получено',take:'Получить',
+    remove:'Убрать',done:'Готово',adLoading:'Загрузка рекламы...',onlineReward:'Награда за игру',
+    walls:'Стены',windows:'Окна',lvlShort:'Ур.',apply2:'Применить',
+    promoOk:'Промокод активирован!',promoBad:'Неверный промокод',
+    noMoney:'Недостаточно монет',placed:'Установлено',
+    bought:'Куплено',expandHint:'Нажмите на тёмную клетку рядом',
+    streak:'Серия дней',dailyTaken:'Уже получено сегодня',stockEmpty:'Склад пуст — купите товар',
+    tapShelf:'Нажмите на полку, чтобы разложить товар',adDone:'Награда получена!',
+    shelfInfo:'Информация о полке',total:'Всего',slots:'мест',onMap:'На карте',
+    tutorial1:'Добро пожаловать! Это ваш магазин. Нажмите «Далее».',
+    tutorial2:'Откройте «Магазин» и купите хотя бы один товар.',
+    tutorial3:'Откройте «Склад», выберите товар и разместите на полку.',
+    tutorial4:'Отлично! Теперь ждите покупателей и зарабатывайте.',
+    tutorial5:'Готово! Ваш магазин работает. Удачи!',
+    next:'Далее',finish:'Завершить',emptyShelf:'Пусто',
+    locked:'Заблокировано',requires:'Требуется',level:'Ур.',
+    levelUp:'НОВЫЙ УРОВЕНЬ!',levelUpSub:'Открыты новые товары и клетки!',
+    maxCells:'Достигнут лимит клеток',
+    truckTitle:'🚚 Грузовик с акцией!',truckDesc:'Смотрите рекламу и получите x2 доход на 2 минуты!',
+    truckAccept:'Смотреть рекламу',truckDecline:'Прогнать',
+    dirtClean:'+опыт за уборку!',bonusActive:'x2 доход!',
+    returnedGoods:'Товар возвращён на склад',
+    occupied:'Занято',tooFar:'Слишком далеко',
+    adNotAvailable:'Реклама недоступна',noCashierReturn:'Нет кассы — товар возвращён',
+    truckArrived:'🚚 Грузовик с акцией! Нажмите!',truckLeft:'🚚 Грузовик уехал',
+    tapEmptyCell:'Нажмите на свободную клетку',tutorialComplete:'Обучение завершено!',
+    cellAdded:'+1 клетка',stocked:'Разложено',noSlots:'Нет свободных мест',shelfFull:'Полка заполнена',
+    inviteSent:'Приглашение отправлено!',inviteUnavailable:'Приглашение недоступно',
+    confirmReset:'Вы точно хотите сбросить весь прогресс? Это действие нельзя отменить!',
+    yesReset:'Да, сбросить',progressReset:'Прогресс сброшен',
+    timeRewards:'Награды за время',timeRewardsDesc:'Играйте и получайте награды. Прогресс сбрасывается при новом заходе.',
+    timePlayed:'Вы играете',minShort:'мин',secShort:'сек',
+    rewardAvailable:'Доступна награда за игру!',needMore:'Нужно ещё',sellAt:'Продажа за',
+    upgrades:'Улучшения',buyUpgrade:'Купить',maxed:'Максимум',upgradeLevel:'Ур.',
+    noUpgrades:'Нет доступных улучшений',
+    prestige:'Перерождение',prestigeChip:'★',prestigeBonus:'+{n}% к доходу навсегда',
+    prestigeCurrent:'Текущий бонус перерождений: +{n}%',prestigeReady:'Готово к перерождению!',
+    prestigeRequires:'Требуется уровень {n}',prestigeBtn:'Переродиться',
+    prestigeConfirmTitle:'Перерождение',
+    prestigeConfirm:'Переродиться? Уровень, опыт, деньги и магазин сбросятся, но вы навсегда получите +5% к доходу.',
+    prestigeYes:'Переродиться',prestigeDone:'Перерождение совершено!',
+    prestigeTotal:'Перерождений: {n}',prestigeBonusTotal:'Общий бонус: +{n}%',
+    settingsTabMain:'Основные',settingsTabUpgrades:'Улучшения',settingsTabPrestige:'Перерождение',
+    adModalTitle:'Подождите',taskRefresh:'Обновление',
+    zoomIn:'Приблизить',zoomOut:'Отдалить'
+  },
+  en:{shop:'Shop',warehouse:'Storage',friends:'Friends',settings:'Settings',rewards:'Rewards',
+    tasks:'Tasks',daily:'Daily reward',close:'Close',buy:'Buy',
+    cancel:'Cancel',place:'Place',money:'Coins',music:'Music',language:'Language',
+    promo:'Promo code',apply:'Apply',tutorialQ:'Would you like a tutorial?',
+    tutorialYes:'Start tutorial',tutorialSkip:'Skip',items:'Products',furniture:'Furniture',
+    decor:'Decor',expand:'Expansion',autoStock:'Auto-stock',
+    nothing:'Empty',reward:'Reward',claim:'Claim',claimed:'Claimed',take:'Get',
+    remove:'Remove',done:'Done',adLoading:'Loading ad...',onlineReward:'Playtime reward',
+    walls:'Walls',windows:'Windows',lvlShort:'Lv.',apply2:'Apply',
+    promoOk:'Promo code activated!',promoBad:'Invalid promo code',
+    noMoney:'Not enough coins',placed:'Placed',
+    bought:'Purchased',expandHint:'Tap a dark cell nearby',
+    streak:'Day streak',dailyTaken:'Already claimed today',stockEmpty:'Storage is empty',
+    tapShelf:'Tap a shelf to place goods',adDone:'Ad reward received!',
+    shelfInfo:'Shelf info',total:'Total',slots:'slots',onMap:'On map',
+    tutorial1:'Welcome! This is your shop. Tap Next to continue.',
+    tutorial2:'Open the Shop and buy at least one item.',
+    tutorial3:'Open Storage, pick an item and place it on a shelf.',
+    tutorial4:'Great! Now wait for customers and earn money.',
+    tutorial5:'Done! Your shop is running. Good luck!',
+    next:'Next',finish:'Finish',emptyShelf:'Empty',
+    locked:'Locked',requires:'Requires',level:'Lv.',
+    levelUp:'NEW LEVEL!',levelUpSub:'New products and cells unlocked!',
+    maxCells:'Cell limit reached',
+    truckTitle:'🚚 Sale truck!',truckDesc:'Watch an ad and get x2 income for 2 minutes!',
+    truckAccept:'Watch ad',truckDecline:'Drive away',
+    dirtClean:'+XP for cleaning!',bonusActive:'x2 income!',
+    returnedGoods:'Goods returned to storage',
+    occupied:'Occupied',tooFar:'Too far',
+    adNotAvailable:'Ad not available',noCashierReturn:'No cashier — goods returned',
+    truckArrived:'🚚 Sale truck! Tap it!',truckLeft:'🚚 Truck left',
+    tapEmptyCell:'Tap an empty cell',tutorialComplete:'Tutorial complete!',
+    cellAdded:'+1 cell',stocked:'Stocked',noSlots:'No free slots',shelfFull:'Shelf full',
+    inviteSent:'Invite sent!',inviteUnavailable:'Invite unavailable',
+    confirmReset:'Are you sure you want to reset all progress? This cannot be undone!',
+    yesReset:'Yes, reset',progressReset:'Progress reset',
+    timeRewards:'Time rewards',timeRewardsDesc:'Play and earn rewards. Progress resets on re-entry.',
+    timePlayed:'You have played',minShort:'min',secShort:'sec',
+    rewardAvailable:'Time reward available!',needMore:'Need more',sellAt:'Sells for',
+    upgrades:'Upgrades',buyUpgrade:'Buy',maxed:'Maxed',upgradeLevel:'Lv.',
+    noUpgrades:'No upgrades available',
+    prestige:'Prestige',prestigeChip:'★',prestigeBonus:'+{n}% income forever',
+    prestigeCurrent:'Current prestige bonus: +{n}%',prestigeReady:'Ready to prestige!',
+    prestigeRequires:'Level {n} required',prestigeBtn:'Prestige',
+    prestigeConfirmTitle:'Prestige',
+    prestigeConfirm:'Prestige? Your level, XP, money and shop will reset, but you permanently gain +5% income.',
+    prestigeYes:'Prestige',prestigeDone:'Prestige complete!',
+    prestigeTotal:'Prestiges: {n}',prestigeBonusTotal:'Total bonus: +{n}%',
+    settingsTabMain:'Main',settingsTabUpgrades:'Upgrades',settingsTabPrestige:'Prestige',
+    adModalTitle:'Please wait',taskRefresh:'Refresh',
+    zoomIn:'Zoom in',zoomOut:'Zoom out'
+  }
+};
+function t(k){ const L = STR[state.lang] || STR.ru; return L[k] !== undefined ? L[k] : (STR.ru[k] || k); }
+function pname(p){ return state.lang === 'en' ? p.en : p.ru; }
+function catName(c){ return state.lang === 'en' ? CATS[c].en : CATS[c].ru; }
+function fname(k){ return state.lang === 'en' ? FURNITURE[k].en : FURNITURE[k].ru; }
+function uname(k){ const u = UPGRADES[k]; if(!u) return ''; return state.lang === 'en' ? u.name.en : u.name.ru; }
+function udesc(k){ const u = UPGRADES[k]; if(!u) return ''; return state.lang === 'en' ? u.desc.en : u.desc.ru; }
+
+/* ------------------------------- 2. УТИЛИТЫ ------------------------------- */
+const $ = s => document.querySelector(s);
+const canvas = $('#game');
+const ctx = canvas.getContext('2d');
+function rnd(a,b){ return a + Math.random() * (b - a); }
+function randInt(a,b){ return Math.floor(rnd(a,b+1)); }
+function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+function clamp(v,a,b){ return v < a ? a : (v > b ? b : v); }
+function hexToRgb(h){
+  h = h.replace('#','');
+  if(h.length === 3) h = h.split('').map(c => c + c).join('');
+  return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)];
+}
+function rgbToHex(r,g,b){
+  return '#' + [r,g,b].map(v => clamp(Math.round(v),0,255).toString(16).padStart(2,'0')).join('');
+}
+function shade(hex,amt){ const [r,g,b] = hexToRgb(hex); return rgbToHex(r+amt,g+amt,b+amt); }
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+}
+function fmt(n){
+  if(n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+  if(n >= 1e4) return (n/1e3).toFixed(1) + 'K';
+  return String(Math.floor(n));
+}
+function lerpAngle(a,b,k){
+  let d = ((b - a + Math.PI) % (Math.PI*2)) - Math.PI;
+  if(d < -Math.PI) d += Math.PI*2;
+  return a + d * k;
+}
+function fmtTime(sec){
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return m + ' ' + t('minShort') + ' ' + s + ' ' + t('secShort');
+}
+function fmtStr(str, obj){
+  return str.replace(/\{(\w+)\}/g, (m,k) => obj[k] !== undefined ? obj[k] : m);
+}
+
+/* --------------------- 2b. УРОВНИ/БОНУСЫ/ПРОКАЧКИ ------------------------ */
+function cumulativeXP(level){ return 250 * level * (level - 1); }
+function getLevel(){
+  let lvl = 1;
+  while(lvl < 40 && state.xp >= cumulativeXP(lvl + 1)) lvl++;
+  return lvl;
+}
+function xpProgress(){
+  const lvl = getLevel();
+  const cur = state.xp - cumulativeXP(lvl);
+  const next = cumulativeXP(lvl + 1) - cumulativeXP(lvl);
+  return {cur, next, ratio: next > 0 ? cur / next : 0};
+}
+function maxCellsForLevel(lvl){ return Math.min(36 + (lvl - 1) * 6, GW * GH); }
+function hasIncomeBonus(){ return state.bonusUntil > Date.now(); }
+function upgradeLevel(key){ return (state.upgrades && state.upgrades[key]) || 0; }
+function incomeMultiplier(){
+  let m = 1;
+  m *= (1 + 0.02 * upgradeLevel('income'));
+  m *= (1 + PRESTIGE_BONUS * state.prestige);
+  if(hasIncomeBonus()) m *= 2;
+  return m;
+}
+function spawnRateMul(){ return 1 + 0.10 * upgradeLevel('spawn'); }
+function speedMul(){ return 1 + 0.15 * upgradeLevel('speed'); }
+function xpMul(){ return 1 + 0.10 * upgradeLevel('xp'); }
+function extraCapacity(){ return upgradeLevel('cap'); }
+function canPrestige(){ return getLevel() >= PRESTIGE_LEVEL; }
+
+/* --------------------------- 3. SVG-СПРАЙТЫ ------------------------------- */
+const SPRITES = {};
+function svgURI(s){ return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s); }
+function makeSprite(key, svg){
+  if(SPRITES[key]) return SPRITES[key];
+  const img = new Image();
+  img.decoding = 'async';
+  img.src = svgURI(svg);
+  SPRITES[key] = img;
+  return img;
+}
+
+function furnitureSVG(type){
+  if(type === 'shelf'){
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <rect x="6" y="8" width="88" height="84" rx="8" fill="#8a5a2b"/>
+      <rect x="12" y="14" width="76" height="20" rx="4" fill="#c9945c"/>
+      <rect x="12" y="40" width="76" height="20" rx="4" fill="#c9945c"/>
+      <rect x="12" y="66" width="76" height="20" rx="4" fill="#c9945c"/>
+      <rect x="6" y="8" width="88" height="84" rx="8" fill="none" stroke="#6b4420" stroke-width="5"/>
+    </svg>`;
+  }
+  if(type === 'rack'){
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <rect x="4" y="4" width="92" height="92" rx="8" fill="#6b4420"/>
+      <rect x="9" y="9" width="38" height="38" rx="4" fill="#b07f4a"/>
+      <rect x="53" y="9" width="38" height="38" rx="4" fill="#b07f4a"/>
+      <rect x="9" y="53" width="38" height="38" rx="4" fill="#b07f4a"/>
+      <rect x="53" y="53" width="38" height="38" rx="4" fill="#b07f4a"/>
+      <rect x="4" y="4" width="92" height="92" rx="8" fill="none" stroke="#4a2e15" stroke-width="5"/>
+    </svg>`;
+  }
+  if(type === 'fridge'){
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <rect x="10" y="5" width="80" height="90" rx="10" fill="#e2ecf5" stroke="#9fb4c7" stroke-width="5"/>
+      <line x1="12" y1="38" x2="88" y2="38" stroke="#9fb4c7" stroke-width="4"/>
+      <rect x="76" y="14" width="6" height="18" rx="3" fill="#9fb4c7"/>
+      <rect x="76" y="46" width="6" height="26" rx="3" fill="#9fb4c7"/>
+      <rect x="18" y="46" width="46" height="10" rx="3" fill="#c7d9e8" opacity=".8"/>
+    </svg>`;
+  }
+  if(type === 'counter'){
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <rect x="6" y="42" width="88" height="52" rx="8" fill="#5b6b7d" stroke="#3d4a58" stroke-width="5"/>
+      <rect x="10" y="38" width="80" height="12" rx="4" fill="#8093a8" stroke="#3d4a58" stroke-width="3"/>
+      <rect x="60" y="50" width="26" height="20" rx="3" fill="#26313f"/>
+      <rect x="64" y="54" width="18" height="12" rx="2" fill="#4ad3a0"/>
+      <rect x="14" y="56" width="34" height="7" rx="3" fill="#8093a8"/>
+      <rect x="14" y="68" width="34" height="7" rx="3" fill="#8093a8"/>
+      <rect x="14" y="80" width="60" height="8" rx="3" fill="#8093a8"/>
+    </svg>`;
+  }
+  return '';
+}
+
+function productSVG(shape, color){
+  const dark = shade(color, -65);
+  const light = shade(color, 55);
+  let inner = '';
+  switch(shape){
+    case 'apple':
+      inner = `<path d="M50 26 Q32 22 26 44 Q20 68 32 84 Q44 96 50 88 Q56 96 68 84 Q80 68 74 44 Q68 22 50 26 Z" fill="#e63c3c" stroke="#7a1a1a" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M50 26 Q50 14 56 8" fill="none" stroke="#5a4a1a" stroke-width="3.5" stroke-linecap="round"/>
+        <ellipse cx="64" cy="14" rx="11" ry="6" fill="#3d7a42" stroke="#2a5a2e" stroke-width="2" transform="rotate(25 64 14)"/>
+        <ellipse cx="38" cy="48" rx="5" ry="8" fill="#fff" opacity=".45"/>`;
+      break;
+    case 'banana':
+      inner = `<path d="M14 26 Q10 68 46 88 Q86 92 90 54 Q84 74 60 76 Q30 72 30 42 Q26 26 14 26 Z" fill="#f6d24c" stroke="#9a7c0d" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M18 30 Q30 48 38 60 Q48 72 64 74" fill="none" stroke="#d4b018" stroke-width="2" opacity=".7"/>
+        <circle cx="14" cy="26" r="3" fill="#7a5a08"/>
+        <path d="M88 54 Q92 58 92 64" fill="none" stroke="#7a5a08" stroke-width="3" stroke-linecap="round"/>`;
+      break;
+    case 'orange':
+      inner = `<circle cx="50" cy="58" r="34" fill="#f68a1c" stroke="#a04a08" stroke-width="3.5"/>
+        <path d="M50 24 L50 8" stroke="#7a5a1a" stroke-width="3" stroke-linecap="round"/>
+        <ellipse cx="58" cy="18" rx="10" ry="5" fill="#3d7a42" stroke="#2a5a2e" stroke-width="1.8" transform="rotate(20 58 18)"/>
+        <path d="M28 42 Q50 34 72 42 M26 58 Q50 50 74 58 M28 74 Q50 66 72 74" fill="none" stroke="#c05a08" stroke-width="1.2" opacity=".55"/>
+        <ellipse cx="38" cy="46" rx="7" ry="9" fill="#fff" opacity=".35"/>`;
+      break;
+    case 'pear':
+      inner = `<path d="M50 20 Q42 20 42 34 Q42 42 34 52 Q22 68 30 82 Q42 96 50 88 Q58 96 70 82 Q78 68 66 52 Q58 42 58 34 Q58 20 50 20 Z" fill="#c8d84c" stroke="#6a7a10" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M50 20 Q50 12 54 6" fill="none" stroke="#5a4a1a" stroke-width="3" stroke-linecap="round"/>
+        <ellipse cx="60" cy="14" rx="8" ry="4.5" fill="#3d7a42" stroke="#2a5a2e" stroke-width="1.8" transform="rotate(30 60 14)"/>
+        <ellipse cx="40" cy="60" rx="5" ry="9" fill="#fff" opacity=".35"/>`;
+      break;
+    case 'grapes':
+      inner = `<path d="M50 12 Q50 18 44 22" fill="none" stroke="#5a4a1a" stroke-width="3" stroke-linecap="round"/>
+        <ellipse cx="58" cy="14" rx="10" ry="5" fill="#3d7a42" stroke="#2a5a2e" stroke-width="1.8" transform="rotate(-20 58 14)"/>
+        <circle cx="50" cy="34" r="11" fill="#8b5fbf" stroke="#4a2a70" stroke-width="2.2"/>
+        <circle cx="36" cy="44" r="11" fill="#8b5fbf" stroke="#4a2a70" stroke-width="2.2"/>
+        <circle cx="64" cy="44" r="11" fill="#8b5fbf" stroke="#4a2a70" stroke-width="2.2"/>
+        <circle cx="50" cy="56" r="11" fill="#8b5fbf" stroke="#4a2a70" stroke-width="2.2"/>
+        <circle cx="36" cy="66" r="11" fill="#8b5fbf" stroke="#4a2a70" stroke-width="2.2"/>
+        <circle cx="64" cy="66" r="11" fill="#8b5fbf" stroke="#4a2a70" stroke-width="2.2"/>
+        <circle cx="50" cy="78" r="11" fill="#8b5fbf" stroke="#4a2a70" stroke-width="2.2"/>
+        <circle cx="46" cy="32" r="2.5" fill="#fff" opacity=".7"/>`;
+      break;
+    case 'kiwi':
+      inner = `<ellipse cx="50" cy="58" rx="32" ry="34" fill="#8a6a3a" stroke="#4a3a1a" stroke-width="3.5"/>
+        <ellipse cx="50" cy="58" rx="24" ry="26" fill="#8ac04c"/>
+        <ellipse cx="50" cy="58" rx="10" ry="12" fill="#f0f0e0"/>
+        <circle cx="50" cy="58" r="2" fill="#8a6a3a"/>
+        <path d="M50 32 L50 44 M50 72 L50 84 M26 58 L38 58 M62 58 L74 58 M32 40 L42 48 M58 68 L68 76 M32 76 L42 68 M58 48 L68 40" stroke="#1a2a10" stroke-width="1" opacity=".8"/>`;
+      break;
+    case 'peach':
+      inner = `<path d="M50 24 Q32 22 24 44 Q20 68 34 84 Q44 94 50 88 Q56 94 66 84 Q80 68 76 44 Q68 22 50 24 Z" fill="#f5a47c" stroke="#b05530" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M50 24 Q50 24 50 88" fill="none" stroke="#c06a40" stroke-width="1.5" opacity=".7"/>
+        <path d="M50 24 Q50 12 56 6" fill="none" stroke="#5a4a1a" stroke-width="3" stroke-linecap="round"/>
+        <ellipse cx="64" cy="14" rx="11" ry="5.5" fill="#3d7a42" stroke="#2a5a2e" stroke-width="1.8" transform="rotate(25 64 14)"/>
+        <ellipse cx="38" cy="48" rx="5" ry="8" fill="#fff" opacity=".4"/>`;
+      break;
+    case 'pineapple':
+      inner = `<path d="M28 40 Q28 22 50 22 Q72 22 72 40 L76 82 Q76 94 50 94 Q24 94 24 82 Z" fill="#f0b820" stroke="#7a5a10" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M50 22 L40 4 M50 22 L48 2 M50 22 L58 4 M50 22 L32 12 M50 22 L68 12" stroke="#3d7a42" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+        <path d="M36 44 L36 86 M50 40 L50 92 M64 44 L64 86" stroke="#a07a10" stroke-width="1.8" fill="none" opacity=".6"/>
+        <path d="M28 58 L72 58 M28 72 L72 72" stroke="#a07a10" stroke-width="1.8" fill="none" opacity=".6"/>`;
+      break;
+    case 'potato':
+      inner = `<ellipse cx="50" cy="58" rx="34" ry="26" fill="#c09060" stroke="#7a5530" stroke-width="3.5" transform="rotate(-15 50 58)"/>
+        <circle cx="38" cy="50" r="3" fill="#5a3a1a" opacity=".6"/>
+        <circle cx="62" cy="58" r="2.5" fill="#5a3a1a" opacity=".6"/>
+        <circle cx="48" cy="70" r="2" fill="#5a3a1a" opacity=".6"/>
+        <circle cx="58" cy="44" r="1.8" fill="#5a3a1a" opacity=".6"/>
+        <ellipse cx="36" cy="46" rx="7" ry="5" fill="#fff" opacity=".3"/>`;
+      break;
+    case 'carrot':
+      inner = `<path d="M50 92 L32 40 Q32 28 50 28 Q68 28 68 40 Z" fill="#f08030" stroke="#a04a10" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M40 50 L34 46 M44 60 L36 58 M46 70 L40 68 M56 50 L62 46 M56 60 L64 58 M54 70 L60 68" stroke="#a04a10" stroke-width="1.6" fill="none"/>
+        <path d="M50 28 Q48 18 42 12 M50 28 Q50 16 50 8 M50 28 Q54 18 60 14" stroke="#3d7a42" stroke-width="4" stroke-linecap="round" fill="none"/>
+        <ellipse cx="44" cy="38" rx="3" ry="6" fill="#fff" opacity=".3"/>`;
+      break;
+    case 'onion':
+      inner = `<path d="M50 30 Q30 34 26 56 Q26 82 50 88 Q74 82 74 56 Q70 34 50 30 Z" fill="#c08a4a" stroke="#7a5010" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M50 30 Q50 14 44 8 M50 30 Q50 16 50 6 M50 30 Q54 16 60 10" stroke="#5a4a1a" stroke-width="3" stroke-linecap="round" fill="none"/>
+        <path d="M40 40 Q36 60 40 82 M50 36 Q50 60 50 86 M60 40 Q64 60 60 82" fill="none" stroke="#8a6010" stroke-width="1.4" opacity=".6"/>
+        <ellipse cx="40" cy="52" rx="4" ry="7" fill="#fff" opacity=".3"/>`;
+      break;
+    case 'tomato':
+      inner = `<circle cx="50" cy="60" r="32" fill="#e03c2c" stroke="#7a1a10" stroke-width="3.5"/>
+        <path d="M50 30 L50 22 M50 30 Q42 22 36 20 M50 30 Q58 22 64 20 M50 30 Q46 22 42 16 M50 30 Q54 22 58 16" stroke="#3d7a42" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+        <ellipse cx="38" cy="50" rx="6" ry="8" fill="#fff" opacity=".35"/>`;
+      break;
+    case 'cucumber':
+      inner = `<rect x="34" y="14" width="32" height="74" rx="16" fill="#5ca030" stroke="#2a5a10" stroke-width="3.5"/>
+        <circle cx="44" cy="30" r="1.5" fill="#3a7a20" opacity=".7"/>
+        <circle cx="56" cy="42" r="1.5" fill="#3a7a20" opacity=".7"/>
+        <circle cx="44" cy="56" r="1.5" fill="#3a7a20" opacity=".7"/>
+        <circle cx="56" cy="70" r="1.5" fill="#3a7a20" opacity=".7"/>
+        <rect x="40" y="20" width="3" height="60" rx="1.5" fill="#fff" opacity=".35"/>
+        <path d="M40 16 L44 12 M56 16 L60 12" stroke="#2a5a10" stroke-width="2" stroke-linecap="round"/>`;
+      break;
+    case 'cabbage':
+      inner = `<circle cx="50" cy="58" r="34" fill="#a8d060" stroke="#5a8020" stroke-width="3.5"/>
+        <path d="M50 24 Q50 58 50 92 M22 42 Q46 54 78 44 M22 72 Q46 60 78 74" fill="none" stroke="#7aa840" stroke-width="2.2"/>
+        <path d="M50 24 Q34 34 24 44 M50 24 Q66 34 76 44" fill="none" stroke="#7aa840" stroke-width="2.2"/>
+        <ellipse cx="38" cy="46" rx="6" ry="8" fill="#fff" opacity=".28"/>`;
+      break;
+    case 'pepper':
+      inner = `<path d="M50 26 Q30 30 26 54 Q26 82 50 90 Q74 82 74 54 Q70 30 50 26 Z" fill="#e63c3c" stroke="#7a1a1a" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M50 26 Q50 16 50 12" stroke="#3d7a42" stroke-width="4" stroke-linecap="round"/>
+        <path d="M50 26 Q42 20 38 14 M50 26 Q58 20 62 14" stroke="#3d7a42" stroke-width="3" stroke-linecap="round" fill="none"/>
+        <path d="M38 42 Q34 60 38 80 M62 42 Q66 60 62 80" fill="none" stroke="#a01a1a" stroke-width="1.5" opacity=".5"/>
+        <ellipse cx="38" cy="48" rx="4" ry="7" fill="#fff" opacity=".4"/>`;
+      break;
+    case 'broccoli':
+      inner = `<rect x="42" y="60" width="16" height="32" rx="3" fill="#a8d060" stroke="#5a8020" stroke-width="3"/>
+        <path d="M42 68 Q28 66 24 80 M58 68 Q72 66 76 80" fill="none" stroke="#5a8020" stroke-width="3"/>
+        <circle cx="34" cy="42" r="16" fill="#3d7a42" stroke="#1a4a1a" stroke-width="3"/>
+        <circle cx="66" cy="42" r="16" fill="#3d7a42" stroke="#1a4a1a" stroke-width="3"/>
+        <circle cx="50" cy="34" r="17" fill="#4a8c4e" stroke="#1a4a1a" stroke-width="3"/>
+        <circle cx="50" cy="52" r="14" fill="#3d7a42" stroke="#1a4a1a" stroke-width="3"/>
+        <circle cx="42" cy="30" r="3" fill="#7ac05a" opacity=".6"/>
+        <circle cx="60" cy="36" r="3" fill="#7ac05a" opacity=".6"/>`;
+      break;
+    case 'bottle':
+      inner = `<rect x="42" y="4" width="16" height="12" rx="3" fill="${dark}"/>
+        <rect x="38" y="14" width="24" height="8" rx="3" fill="${dark}"/>
+        <path d="M30 24 Q30 20 34 20 L66 20 Q70 20 70 24 L70 84 Q70 92 60 92 L40 92 Q30 92 30 84 Z" fill="${color}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+        <rect x="34" y="42" width="32" height="22" rx="3" fill="#fff" opacity=".82"/>
+        <rect x="38" y="46" width="24" height="3" rx="1" fill="${dark}" opacity=".4"/>`;
+      break;
+    case 'can':
+      inner = `<ellipse cx="50" cy="18" rx="26" ry="8" fill="#dfe6ee" stroke="${dark}" stroke-width="3"/>
+        <rect x="24" y="18" width="52" height="72" fill="${color}" stroke="${dark}" stroke-width="4"/>
+        <ellipse cx="50" cy="90" rx="26" ry="7" fill="${dark}" opacity=".9"/>
+        <rect x="32" y="40" width="36" height="24" rx="4" fill="#fff" opacity=".82"/>
+        <circle cx="50" cy="52" r="7" fill="${dark}" opacity=".5"/>`;
+      break;
+    case 'carton':
+      inner = `<path d="M26 26 L50 10 L74 26 L74 90 L26 90 Z" fill="${color}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M26 26 L50 42 L74 26" fill="none" stroke="${dark}" stroke-width="3"/>
+        <rect x="38" y="52" width="24" height="22" rx="3" fill="#fff" opacity=".85"/>
+        <circle cx="50" cy="63" r="6" fill="${color}" opacity=".8"/>`;
+      break;
+    case 'tetra':
+      inner = `<path d="M30 22 L50 8 L70 22 L74 88 L26 88 Z" fill="${color}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M30 22 L50 36 L70 22" fill="none" stroke="${dark}" stroke-width="3"/>
+        <rect x="36" y="50" width="28" height="26" rx="3" fill="#fff" opacity=".85"/>
+        <rect x="42" y="60" width="16" height="4" rx="2" fill="${dark}" opacity=".5"/>`;
+      break;
+    case 'box':
+      inner = `<rect x="20" y="24" width="60" height="66" rx="6" fill="${color}" stroke="${dark}" stroke-width="4"/>
+        <rect x="20" y="24" width="60" height="14" rx="6" fill="${dark}"/>
+        <rect x="30" y="48" width="40" height="26" rx="4" fill="#fff" opacity=".85"/>
+        <circle cx="50" cy="61" r="7" fill="${color}" opacity=".7"/>`;
+      break;
+    case 'packet':
+      inner = `<path d="M24 20 L76 20 L80 32 L80 86 Q80 92 74 92 L26 92 Q20 92 20 86 L20 32 Z" fill="${color}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M24 20 L76 20 L72 30 L28 30 Z" fill="${dark}" opacity=".85"/>
+        <rect x="32" y="44" width="36" height="24" rx="4" fill="#fff" opacity=".85"/>
+        <path d="M40 56 L48 56 M52 56 L60 56" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>`;
+      break;
+    case 'bag':
+      inner = `<path d="M24 30 L76 30 L74 90 Q74 94 70 94 L30 94 Q26 94 26 90 Z" fill="${color}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M36 30 Q36 12 50 12 Q64 12 64 30" fill="none" stroke="${dark}" stroke-width="5" stroke-linecap="round"/>
+        <rect x="34" y="52" width="32" height="22" rx="3" fill="#fff" opacity=".8"/>`;
+      break;
+    case 'round':
+      inner = `<circle cx="50" cy="58" r="32" fill="${color}" stroke="${dark}" stroke-width="4"/>
+        <ellipse cx="42" cy="46" rx="7" ry="9" fill="#fff" opacity=".35"/>`;
+      break;
+    case 'tree':
+      inner = `<rect x="46" y="60" width="8" height="30" fill="#7a4a22"/>
+        <circle cx="50" cy="42" r="20" fill="${color}" stroke="${dark}" stroke-width="4"/>
+        <circle cx="36" cy="52" r="14" fill="${color}" stroke="${dark}" stroke-width="4"/>
+        <circle cx="64" cy="52" r="14" fill="${color}" stroke="${dark}" stroke-width="4"/>`;
+      break;
+    case 'cylinder':
+      inner = `<path d="M32 22 L32 84 Q32 92 50 92 Q68 92 68 84 L68 22" fill="${color}" stroke="${dark}" stroke-width="4"/>
+        <ellipse cx="50" cy="22" rx="18" ry="6" fill="${light}" stroke="${dark}" stroke-width="4"/>
+        <rect x="40" y="46" width="20" height="20" rx="3" fill="#fff" opacity=".6"/>`;
+      break;
+    case 'jar':
+      inner = `<rect x="30" y="14" width="40" height="12" rx="3" fill="#8a8f9a" stroke="${dark}" stroke-width="3"/>
+        <path d="M28 26 L72 26 L72 84 Q72 92 64 92 L36 92 Q28 92 28 84 Z" fill="${color}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+        <rect x="34" y="46" width="32" height="22" rx="3" fill="#fff" opacity=".85"/>`;
+      break;
+    case 'tube':
+      inner = `<rect x="30" y="10" width="40" height="12" rx="3" fill="${dark}"/>
+        <path d="M36 22 L64 22 L68 86 Q68 92 62 92 L38 92 Q32 92 32 86 Z" fill="${color}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+        <rect x="40" y="42" width="20" height="26" rx="3" fill="#fff" opacity=".85"/>`;
+      break;
+    case 'bar':
+      inner = `<rect x="14" y="24" width="72" height="52" rx="6" fill="${color}" stroke="${dark}" stroke-width="4"/>
+        <rect x="22" y="32" width="56" height="36" rx="3" fill="#5b3a1a"/>
+        <rect x="22" y="32" width="56" height="36" rx="3" fill="none" stroke="${dark}" stroke-width="2"/>
+        <path d="M30 50 L70 50" stroke="#8a5a2b" stroke-width="3"/>`;
+      break;
+    case 'wedge':
+      inner = `<path d="M18 76 L82 76 L82 60 Q82 30 50 26 L18 40 Z" fill="${color}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="46" cy="52" r="4" fill="${light}" opacity=".7"/>
+        <circle cx="58" cy="60" r="3" fill="${light}" opacity=".7"/>`;
+      break;
+    case 'pouch':
+      inner = `<path d="M28 24 Q50 12 72 24 L76 84 Q76 92 68 92 L32 92 Q24 92 24 84 Z" fill="${color}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M28 24 Q50 34 72 24" fill="none" stroke="${dark}" stroke-width="3"/>
+        <circle cx="50" cy="58" r="16" fill="#fff" opacity=".85"/>
+        <circle cx="50" cy="58" r="8" fill="${color}" opacity=".8"/>`;
+      break;
+    case 'tub':
+      inner = `<path d="M22 30 L78 30 L74 84 Q74 92 66 92 L34 92 Q26 92 26 84 Z" fill="${color}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+        <ellipse cx="50" cy="30" rx="28" ry="7" fill="${light}" stroke="${dark}" stroke-width="4"/>
+        <ellipse cx="50" cy="30" rx="20" ry="4" fill="#fff" opacity=".7"/>
+        <rect x="38" y="50" width="24" height="18" rx="3" fill="#fff" opacity=".8"/>`;
+      break;
+    case 'wrap':
+      inner = `<path d="M22 34 Q30 22 50 22 Q70 22 78 34 L78 78 Q78 86 68 86 L32 86 Q22 86 22 78 Z" fill="${color}" stroke="${dark}" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M22 46 Q50 56 78 46" fill="none" stroke="${dark}" stroke-width="3" opacity=".7"/>
+        <rect x="38" y="60" width="24" height="12" rx="3" fill="#fff" opacity=".75"/>`;
+      break;
+    case 'tray':
+      inner = `<rect x="16" y="34" width="68" height="52" rx="6" fill="#f0f2f5" stroke="#9aa3b0" stroke-width="4"/>
+        <rect x="22" y="40" width="56" height="40" rx="3" fill="${color}" stroke="${dark}" stroke-width="3"/>
+        <ellipse cx="36" cy="60" rx="8" ry="12" fill="${light}" opacity=".5"/>
+        <ellipse cx="56" cy="60" rx="8" ry="12" fill="${light}" opacity=".5"/>`;
+      break;
+    default:
+      inner = `<rect x="22" y="26" width="56" height="64" rx="8" fill="${color}" stroke="${dark}" stroke-width="4"/>`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${inner}</svg>`;
+}
+function prodSprite(p){ return makeSprite('p' + p.id, productSVG(p.shape, p.color)); }
+function furnSprite(type){ return makeSprite('f' + type, furnitureSVG(type)); }
+
+/* ------------------------------ 4. СОСТОЯНИЕ ------------------------------ */
+let state = null;
+function newState(){
+  return {
+    money: 600, lang: 'ru', music: true, tutorialDone: false,
+    xp: 0, prestige: 0,
+    upgrades: {spawn:0, income:0, speed:0, xp:0, cap:0},
+    grid: [], warehouse: {}, decor: {wall: 0, window: 0},
+    owned: {wall: [0], window: [0]},
+    lastDaily: 0, streak: 0,
+    tasks: [], tasksDate: '',
+    ds: {sell:0, earn:0, serve:0, buy:0, place:0, stock:0, expand:0},
+    playtime: 0, claimedTimeRewards: [], notifiedTimeRewards: [],
+    totalServed: 0, totalEarned: 0, adCount: 0, v: 8,
+    dirt: [],
+    truckTimer: TRUCK_CYCLE, truckState: 'away', truckOfferTimer: 0, bonusUntil: 0
+  };
+}
+function initGrid(){
+  state.grid = [];
+  for(let y = 0; y < GH; y++){
+    const row = [];
+    for(let x = 0; x < GW; x++) row.push({u: false, t: null, stock: [], door: false});
+    state.grid.push(row);
+  }
+  for(let y = 0; y < 6; y++) for(let x = 0; x < 6; x++) state.grid[y][x].u = true;
+  state.grid[DOOR.y][DOOR.x].door = true;
+  state.grid[1][1].t = 'shelf';
+  state.grid[1][2].t = 'shelf';
+  state.grid[1][3].t = 'shelf';
+  state.grid[5][5].t = 'counter';
+}
+function cellAt(x, y){
+  if(x < 0 || y < 0 || x >= GW || y >= GH) return null;
+  return state.grid[y][x];
+}
+function walkable(x, y){
+  const c = cellAt(x, y);
+  if(!c || !c.u) return false;
+  if(c.t) return false;
+  return true;
+}
+function unlockedCount(){
+  let n = 0;
+  for(let y = 0; y < GH; y++) for(let x = 0; x < GW; x++) if(state.grid[y][x].u) n++;
+  return n;
+}
+function expandPrice(){ return Math.round(120 * Math.pow(1.16, unlockedCount() - 36)); }
+function isAdjacentToUnlocked(x, y){
+  const d = [[1,0],[-1,0],[0,1],[0,-1]];
+  for(const [dx, dy] of d){
+    const c = cellAt(x + dx, y + dy);
+    if(c && c.u) return true;
+  }
+  return false;
+}
+function shelfCells(){
+  const out = [];
+  for(let y = 0; y < GH; y++) for(let x = 0; x < GW; x++){
+    const c = state.grid[y][x];
+    if(c.u && (c.t === 'shelf' || c.t === 'rack' || c.t === 'fridge')) out.push({x, y, c});
+  }
+  return out;
+}
+function counterCells(){
+  const out = [];
+  for(let y = 0; y < GH; y++) for(let x = 0; x < GW; x++){
+    const c = state.grid[y][x];
+    if(c.u && c.t === 'counter') out.push({x, y, c});
+  }
+  return out;
+}
+function shelfQty(c){ let n = 0; for(const s of c.stock) n += s.n; return n; }
+function shelfCapacity(c){ return FURNITURE[c.t].cap + extraCapacity(); }
+function canAccept(c, pid){
+  const prod = PROD_BY_ID[pid];
+  const acc = FURNITURE[c.t].accepts;
+  if(acc && acc.indexOf(prod.cat) < 0) return false;
+  return true;
+}
+function addToShelf(c, pid, count){
+  const cap = shelfCapacity(c);
+  let space = cap - shelfQty(c);
+  if(space <= 0) return 0;
+  const add = Math.min(space, count);
+  let s = c.stock.find(s => s.id === pid);
+  if(!s){ s = {id: pid, n: 0}; c.stock.push(s); }
+  s.n += add;
+  return add;
+}
+function takeFromShelf(c, pid, count){
+  const s = c.stock.find(s => s.id === pid);
+  if(!s) return 0;
+  const take = Math.min(s.n, count);
+  s.n -= take;
+  if(s.n <= 0) c.stock = c.stock.filter(x => x !== s);
+  return take;
+}
+function warehouseTotal(){
+  let n = 0;
+  for(const k in state.warehouse) n += state.warehouse[k];
+  return n;
+}
+function dropDirt(x, y){
+  const cx = Math.floor(x), cy = Math.floor(y);
+  const c = cellAt(cx, cy);
+  if(!c || !c.u) return;
+  if(state.dirt.find(d => d.x === cx && d.y === cy)) return;
+  state.dirt.push({x: cx, y: cy, type: randInt(0, 2), t: Date.now()});
+}
+function dirtAtCell(x, y){ return state.dirt.find(d => d.x === x && d.y === y); }
+function cleanDirtAt(x, y){
+  const idx = state.dirt.findIndex(d => d.x === x && d.y === y);
+  if(idx < 0) return false;
+  state.dirt.splice(idx, 1);
+  addXP(8);
+  toast(t('dirtClean') + ' +8 XP', '#8fd3ff');
+  scheduleSave();
+  return true;
+}
+
+/* ------------------------- 5. СОХРАНЕНИЕ (VK) ----------------------------- */
+const vk = (typeof window.vkBridge !== 'undefined') ? window.vkBridge : null;
+let vkAvailable = !!vk;
+function vkSend(method, params){
+  if(!vk) return Promise.reject(new Error('no vk'));
+  try { return vk.send(method, params || {}); }
+  catch(e){ return Promise.reject(e); }
+}
+const memStore = {};
+async function storageSet(key, value){
+  if(vkAvailable){
+    try { await vkSend('VKWebAppStorageSet', {key, value}); return; }
+    catch(e){ vkAvailable = false; }
+  }
+  memStore[key] = value;
+}
+async function storageGet(keys){
+  if(vkAvailable){
+    try {
+      const r = await vkSend('VKWebAppStorageGet', {keys});
+      const out = {};
+      (r.keys || []).forEach(k => out[k.key] = k.value);
+      return out;
+    } catch(e){ vkAvailable = false; }
+  }
+  const out = {};
+  keys.forEach(k => out[k] = memStore[k] || '');
+  return out;
+}
+function serialize(){
+  let g = '';
+  for(let y = 0; y < GH; y++) for(let x = 0; x < GW; x++){
+    const c = state.grid[y][x];
+    if(!c.u) g += '.';
+    else if(!c.t) g += '_';
+    else g += {shelf:'S', rack:'R', fridge:'F', counter:'C'}[c.t];
+  }
+  const stocks = [];
+  for(let y = 0; y < GH; y++) for(let x = 0; x < GW; x++){
+    const c = state.grid[y][x];
+    if(c.stock && c.stock.length) stocks.push(x + ',' + y + ':' + c.stock.map(s => s.id + '-' + s.n).join('.'));
+  }
+  const wh = Object.keys(state.warehouse).filter(k => state.warehouse[k] > 0)
+    .map(k => k + '-' + state.warehouse[k]).join(',');
+  const drt = state.dirt.map(d => d.x + ',' + d.y + ',' + d.type).join('|');
+  return {
+    m: Math.floor(state.money), l: state.lang, mu: state.music ? 1 : 0,
+    td: state.tutorialDone ? 1 : 0, xp: Math.floor(state.xp), pr: state.prestige,
+    up: state.upgrades, g, st: stocks.join('|'), wh, drt,
+    dw: state.decor.wall, dn: state.decor.window,
+    ow: state.owned.wall, on: state.owned.window,
+    ld: state.lastDaily, sk: state.streak,
+    tk: state.tasks, tkd: state.tasksDate, ds: state.ds,
+    ts: state.totalServed, te: Math.floor(state.totalEarned), ac: state.adCount,
+    tt: state.truckTimer, ts2: state.truckState, tot: state.truckOfferTimer,
+    bu: state.bonusUntil
+  };
+}
+function deserialize(o){
+  state.money = o.m || 600;
+  state.lang = o.l || 'ru';
+  state.music = o.mu === 1;
+  state.tutorialDone = !!o.td;
+  state.xp = o.xp || 0;
+  state.prestige = o.pr || 0;
+  state.upgrades = o.up || {spawn:0, income:0, speed:0, xp:0, cap:0};
+  Object.keys(UPGRADES).forEach(k => { if(typeof state.upgrades[k] !== 'number') state.upgrades[k] = 0; });
+  state.decor.wall = o.dw || 0;
+  state.decor.window = o.dn || 0;
+  state.owned.wall = o.ow || [0];
+  state.owned.window = o.on || [0];
+  state.lastDaily = o.ld || 0;
+  state.streak = o.sk || 0;
+  state.tasks = o.tk || [];
+  state.tasksDate = o.tkd || '';
+  state.ds = o.ds || {sell:0, earn:0, serve:0, buy:0, place:0, stock:0, expand:0};
+  state.totalServed = o.ts || 0;
+  state.totalEarned = o.te || 0;
+  state.adCount = o.ac || 0;
+  state.truckTimer = o.tt !== undefined ? o.tt : TRUCK_CYCLE;
+  state.truckState = o.ts2 || 'away';
+  state.truckOfferTimer = o.tot || 0;
+  state.bonusUntil = o.bu || 0;
+  state.warehouse = {};
+  state.dirt = [];
+  state.playtime = 0;
+  state.claimedTimeRewards = [];
+  state.notifiedTimeRewards = [];
+  initGrid();
+  if(o.g && o.g.length === GW * GH){
+    for(let y = 0; y < GH; y++) for(let x = 0; x < GW; x++){
+      const ch = o.g[y * GW + x];
+      const c = state.grid[y][x];
+      c.u = ch !== '.';
+      c.t = ch === 'S' ? 'shelf' : ch === 'R' ? 'rack' : ch === 'F' ? 'fridge' : ch === 'C' ? 'counter' : null;
+      c.stock = [];
+    }
+  }
+  if(o.st){
+    o.st.split('|').forEach(part => {
+      if(!part) return;
+      const [pos, items] = part.split(':');
+      const [x, y] = pos.split(',').map(Number);
+      const c = cellAt(x, y);
+      if(!c) return;
+      (items || '').split('.').forEach(it => {
+        const [id, n] = it.split('-').map(Number);
+        if(PROD_BY_ID[id] && n > 0) c.stock.push({id, n});
+      });
+    });
+  }
+  if(o.wh){
+    o.wh.split(',').forEach(part => {
+      if(!part) return;
+      const [id, n] = part.split('-').map(Number);
+      if(PROD_BY_ID[id] && n > 0) state.warehouse[id] = n;
+    });
+  }
+  if(o.drt){
+    o.drt.split('|').forEach(part => {
+      if(!part) return;
+      const [x, y, type] = part.split(',').map(Number);
+      if(!isNaN(x) && !isNaN(y)) state.dirt.push({x, y, type: type || 0, t: Date.now()});
+    });
+  }
+  state.grid[DOOR.y][DOOR.x].door = true;
+}
+let saveTimer = null;
+function scheduleSave(){
+  if(saveTimer) return;
+  saveTimer = setTimeout(() => { saveTimer = null; saveGame(); }, 1200);
+}
+async function saveGame(){
+  try {
+    const data = JSON.stringify(serialize());
+    const chunks = data.match(/.{1,3000}/g) || [''];
+    await storageSet('sn', String(chunks.length));
+    for(let i = 0; i < chunks.length; i++) await storageSet('s' + i, chunks[i]);
+  } catch(e){}
+}
+async function loadGame(){
+  try {
+    const head = await storageGet(['sn']);
+    const n = parseInt(head.sn || '0', 10);
+    if(!n) return false;
+    const keys = [];
+    for(let i = 0; i < n; i++) keys.push('s' + i);
+    const data = await storageGet(keys);
+    let s = '';
+    for(let i = 0; i < n; i++) s += (data['s' + i] || '');
+    if(!s) return false;
+    deserialize(JSON.parse(s));
+    return true;
+  } catch(e){ return false; }
+}
+async function wipeSave(){
+  await storageSet('sn', '0');
+  await storageSet('s0', '');
+  state = newState();
+  initGrid();
+  checkDailyReset();
+  updateHUD();
+}
+
+/* ------------------------------ 6. КЛИЕНТЫ -------------------------------- */
+const SHIRT = ['#4a89ff','#e0575b','#43b581','#f0a93b','#a56bd6','#20b2aa','#e06fa0','#7f8c9b','#5a6fd6','#d97742'];
+const SKIN  = ['#f2c9a0','#e0aa7a','#c98d5c','#9c6b45','#7a5136','#f7dcc0'];
+const HAIR  = ['#2b1d13','#4a2f1c','#7a4a22','#b07a35','#1a1a1a','#8b8b8b'];
+
+class Customer {
+  constructor(){
+    this.x = DOOR.x + 0.5; this.y = DOOR.y + 0.5;
+    this.alpha = 0;
+    this.baseSpeed = rnd(0.6, 0.95);
+    this.speed = this.baseSpeed * speedMul();
+    this.shirt = pick(SHIRT); this.skin = pick(SKIN); this.hair = pick(HAIR);
+    this.state = 'idle';
+    this.path = []; this.cart = [];
+    this.timer = 0; this.walk = 0;
+    this.dir = Math.PI / 2; this.targetDir = Math.PI / 2;
+    this.bob = 0; this.visited = [];
+    this.wants = randInt(2, 4);
+    this.bubble = null; this.bubbleT = 0;
+    this.spot = null; this.dead = false;
+    this.patience = 60;
+    this.dirtDropped = false;
+    this.willDropDirt = Math.random() < 0.2;
+    this.returnNotified = false;
+    this.emptyAttempts = 0;
+  }
+  returnCart(){
+    if(!this.cart.length) return false;
+    for(const it of this.cart) state.warehouse[it.id] = (state.warehouse[it.id] || 0) + 1;
+    this.cart = [];
+    if(!this.returnNotified){
+      this.returnNotified = true;
+      toast(t('returnedGoods'), '#8fd3ff');
+    }
+    scheduleSave();
+    return true;
+  }
+  moveTo(gx, gy){
+    const path = findPath(Math.floor(this.x), Math.floor(this.y), gx, gy);
+    if(path && path.length){ this.path = path; return true; }
+    if(Math.floor(this.x) === gx && Math.floor(this.y) === gy){ this.path = []; return true; }
+    return false;
+  }
+  update(dt){
+    if(this.alpha < 1 && this.state !== 'gone') this.alpha = Math.min(1, this.alpha + dt * 2.5);
+    if(this.bubbleT > 0){ this.bubbleT -= dt; if(this.bubbleT <= 0) this.bubble = null; }
+    if(this.state === 'gone'){
+      this.returnCart();
+      this.alpha -= dt * 1.3;
+      this.x -= dt * 1.2;
+      this.bob = Math.sin(this.walk) * 0.045;
+      this.walk += dt * 7;
+      this.targetDir = Math.PI;
+      this.dir = lerpAngle(this.dir, this.targetDir, Math.min(1, dt * 8));
+      if(this.willDropDirt && !this.dirtDropped && this.alpha < 0.85){
+        this.dirtDropped = true;
+        dropDirt(DOOR.x + 1 + Math.random() * 1.5, DOOR.y + (Math.random() - 0.5) * 1.2);
+      }
+      if(this.alpha <= 0) this.dead = true;
+      return;
+    }
+    if(this.state === 'picking' || this.state === 'paying'){
+      this.timer -= dt;
+      if(this.timer <= 0) this.finishAction();
+      return;
+    }
+    if(this.state === 'waiting'){
+      this.timer -= dt; this.patience -= dt;
+      if(this.patience <= 0){ this.leave(); return; }
+      if(this.timer <= 0) this.tryCashier();
+      return;
+    }
+    if(this.path.length){
+      const tgt = this.path[0];
+      const tx = tgt.x + 0.5, ty = tgt.y + 0.5;
+      const dx = tx - this.x, dy = ty - this.y;
+      const d = Math.hypot(dx, dy);
+      const step = this.speed * dt;
+      if(d <= step){ this.x = tx; this.y = ty; this.path.shift(); }
+      else { this.x += dx / d * step; this.y += dy / d * step; }
+      if(d > 0.01) this.targetDir = Math.atan2(dy, dx);
+      this.dir = lerpAngle(this.dir, this.targetDir, Math.min(1, dt * 10));
+      this.walk += dt * 8;
+      this.bob = Math.sin(this.walk) * 0.045;
+    } else {
+      this.bob *= 0.85;
+      this.dir = lerpAngle(this.dir, this.targetDir, Math.min(1, dt * 10));
+      this.arrive();
+    }
+  }
+  arrive(){
+    if(this.state === 'toShelf'){
+      const cell = this.targetCell;
+      if(!cell || !cell.stock.length){
+        this.emptyAttempts++;
+        this.state = 'idle';
+        if(this.emptyAttempts > 3){ this.goToCashierOrLeave(); return; }
+        this.planShopping();
+        return;
+      }
+      this.state = 'picking';
+      this.timer = rnd(1.3, 2.6);
+      const s = pick(cell.stock);
+      this.bubble = s.id;
+      this.bubbleT = this.timer + 0.3;
+    } else if(this.state === 'toCashier'){
+      this.state = 'paying'; this.timer = rnd(1.1, 1.8);
+    } else if(this.state === 'leaving'){
+      this.state = 'gone';
+    } else if(this.state === 'idle'){
+      this.planShopping();
+    }
+  }
+  finishAction(){
+    if(this.state === 'picking'){
+      const cell = this.targetCell;
+      let gotSomething = false;
+      if(cell && cell.stock.length){
+        const s = pick(cell.stock);
+        if(takeFromShelf(cell, s.id, 1)){
+          const p = PROD_BY_ID[s.id];
+          this.cart.push({id: s.id, price: p.sell});
+          gotSomething = true;
+        }
+      }
+      if(this.targetX !== undefined) this.visited.push(this.targetX + ',' + this.targetY);
+      if(!gotSomething){
+        this.emptyAttempts++;
+        if(this.emptyAttempts > 2){ this.goToCashierOrLeave(); return; }
+        this.state = 'idle';
+        this.planShopping();
+        return;
+      }
+      this.state = 'idle';
+      if(this.cart.length >= this.wants || this.visited.length > 4) this.goToCashier();
+      else this.planShopping();
+    } else if(this.state === 'paying'){
+      let sum = 0;
+      for(const it of this.cart) sum += it.price;
+      const mult = incomeMultiplier();
+      const total = Math.round(sum * mult);
+      state.money += total;
+      state.totalEarned += total;
+      state.ds.earn += total;
+      state.ds.serve += 1;
+      state.ds.sell += this.cart.length;
+      state.totalServed += 1;
+      addXP(Math.max(1, Math.round(total * 0.5 * xpMul())));
+      if(this.spot) busySpots.delete(this.spot);
+      this.spot = null; this.cart = [];
+      toast('+' + fmt(total) + ' \u20BF' + (mult > 1.05 ? ' x' + mult.toFixed(2) : ''), mult > 1.05 ? '#ffd257' : '#7fd07f');
+      updateHUD(); scheduleSave();
+      this.leave();
+    }
+  }
+  planShopping(){
+    const shelves = shelfCells().filter(s => s.c.stock.length > 0);
+    if(!shelves.length){ this.goToCashierOrLeave(); return; }
+    const fresh = shelves.filter(s => this.visited.indexOf(s.x + ',' + s.y) < 0);
+    if(!fresh.length){ this.goToCashierOrLeave(); return; }
+    const target = pick(fresh);
+    const spots = adjacentWalkable(target.x, target.y);
+    if(!spots.length){
+      this.visited.push(target.x + ',' + target.y);
+      if(this.visited.length > shelves.length + 3){ this.goToCashierOrLeave(); return; }
+      this.planShopping();
+      return;
+    }
+    const spot = pick(spots);
+    this.targetCell = target.c;
+    this.targetX = target.x; this.targetY = target.y;
+    this.state = 'toShelf';
+    if(!this.moveTo(spot.x, spot.y)){ this.goToCashierOrLeave(); }
+  }
+  goToCashierOrLeave(){
+    if(this.cart.length > 0) this.goToCashier();
+    else this.leave();
+  }
+  goToCashier(){
+    if(!this.cart.length){ this.leave(); return; }
+    if(!counterCells().length){
+      toast(t('noCashierReturn'), '#e0575b');
+      this.returnCart(); this.leave();
+      return;
+    }
+    this.tryCashier();
+  }
+  tryCashier(){
+    const spots = serviceSpots().filter(s => !busySpots.has(s.x + ',' + s.y));
+    if(!spots.length){ this.state = 'waiting'; this.timer = rnd(0.8, 1.6); return; }
+    let best = null, bd = 1e9;
+    for(const s of spots){
+      const d = Math.abs(s.x - this.x) + Math.abs(s.y - this.y);
+      if(d < bd){ bd = d; best = s; }
+    }
+    busySpots.add(best.x + ',' + best.y);
+    this.spot = best;
+    this.state = 'toCashier';
+    if(!this.moveTo(best.x, best.y)){
+      busySpots.delete(best.x + ',' + best.y);
+      this.spot = null;
+      this.returnCart(); this.leave();
+    }
+  }
+  leave(){
+    if(this.spot){ busySpots.delete(this.spot); this.spot = null; }
+    this.returnCart();
+    this.state = 'leaving';
+    if(!this.moveTo(DOOR.x, DOOR.y)){ this.state = 'gone'; }
+  }
+}
+const busySpots = new Set();
+function serviceSpots(){
+  const out = [];
+  for(const c of counterCells()){
+    const adj = adjacentWalkable(c.x, c.y);
+    for(const a of adj) out.push(a);
+  }
+  return out;
+}
+function adjacentWalkable(x, y){
+  const out = [];
+  const d = [[1,0],[-1,0],[0,1],[0,-1]];
+  for(const [dx, dy] of d){
+    const nx = x + dx, ny = y + dy;
+    if(walkable(nx, ny)) out.push({x: nx, y: ny});
+  }
+  return out;
+}
+function findPath(sx, sy, gx, gy){
+  if(sx === gx && sy === gy) return [];
+  if(!walkable(gx, gy)) return null;
+  const key = (x, y) => y * GW + x;
+  const prev = new Int16Array(GW * GH).fill(-1);
+  const seen = new Uint8Array(GW * GH);
+  const q = [key(sx, sy)];
+  seen[key(sx, sy)] = 1;
+  const D = [[1,0],[-1,0],[0,1],[0,-1]];
+  let found = false;
+  while(q.length){
+    const cur = q.shift();
+    const cx = cur % GW, cy = (cur - cx) / GW;
+    if(cx === gx && cy === gy){ found = true; break; }
+    for(const [dx, dy] of D){
+      const nx = cx + dx, ny = cy + dy;
+      if(nx < 0 || ny < 0 || nx >= GW || ny >= GH) continue;
+      const k = key(nx, ny);
+      if(seen[k]) continue;
+      if(!walkable(nx, ny)) continue;
+      seen[k] = 1; prev[k] = cur; q.push(k);
+    }
+  }
+  if(!found) return null;
+  const path = [];
+  let cur = key(gx, gy);
+  while(cur !== key(sx, sy)){
+    const cx = cur % GW, cy = (cur - cx) / GW;
+    path.unshift({x: cx, y: cy});
+    cur = prev[cur];
+    if(cur < 0) return null;
+  }
+  return path;
+}
+
+/* Кассир */
+const cashier = {
+  x: 5.5, y: 5.15,
+  skin: '#e0aa7a', hair: '#4a2f1c', shirt: '#2b5fae',
+  bob: 0, walk: 0, anchorX: -1, anchorY: -1,
+  update(dt){
+    const counters = counterCells();
+    if(!counters.length) return;
+    let best = counters[0], bd = 1e9;
+    for(const c of counters){
+      const d = Math.abs(c.x - GW/2) + Math.abs(c.y - GH/2);
+      if(d < bd){ bd = d; best = c; }
+    }
+    if(best.x !== this.anchorX || best.y !== this.anchorY){
+      this.anchorX = best.x; this.anchorY = best.y;
+      this.x = best.x + 0.5; this.y = best.y + 0.30;
+    }
+    this.walk += dt * 2.5;
+    this.bob = Math.sin(this.walk) * 0.02;
+  }
+};
+
+/* Грузовик */
+const truck = {
+  x: -12, targetX: 0, baseY: GH + 0.6, arrived: false, wheels: 0,
+  update(dt){
+    if(state.truckState === 'offering'){
+      const dx = this.targetX - this.x;
+      if(Math.abs(dx) > 0.1){ this.x += Math.sign(dx) * dt * 3; this.wheels += dt * 12; }
+      else { this.x = this.targetX; this.arrived = true; }
+    } else if(state.truckState === 'away'){ if(this.x > -12) this.x = -12; this.arrived = false; }
+  },
+  draw(){
+    if(state.truckState !== 'offering') return;
+    const px = this.x, py = this.baseY;
+    ctx.fillStyle = 'rgba(0,0,0,.3)';
+    ctx.beginPath(); ctx.ellipse(px, py + 0.55, 1.7, 0.22, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1b1b1b';
+    ctx.beginPath(); ctx.arc(px - 1.05, py + 0.5, 0.24, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(px + 0.85, py + 0.5, 0.24, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#3a3a3a';
+    ctx.beginPath(); ctx.arc(px - 1.05, py + 0.5, 0.11, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(px + 0.85, py + 0.5, 0.11, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#e63c3c'; ctx.fillRect(px + 0.55, py - 0.05, 0.75, 0.55);
+    ctx.fillStyle = '#8fd3ff'; ctx.fillRect(px + 0.75, py + 0.05, 0.5, 0.3);
+    ctx.fillStyle = '#c92a2a'; ctx.fillRect(px + 0.55, py - 0.05, 0.75, 0.06);
+    ctx.fillStyle = '#f0f0f0'; ctx.fillRect(px - 1.3, py - 0.15, 1.8, 0.65);
+    ctx.fillStyle = '#dcdcdc'; ctx.fillRect(px - 1.3, py + 0.3, 1.8, 0.2);
+    ctx.save();
+    ctx.translate(px - 0.4, py + 0.15);
+    ctx.fillStyle = '#e63c3c'; ctx.font = 'bold 0.32px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('SALE', 0, 0);
+    ctx.fillStyle = '#ffd257'; ctx.font = 'bold 0.22px system-ui'; ctx.fillText('x2', 0, 0.34);
+    ctx.restore();
+    const blink = Math.sin(Date.now() / 200) > 0;
+    if(blink){
+      ctx.fillStyle = '#ffd257';
+      ctx.beginPath(); ctx.arc(px + 1.3, py - 0.05, 0.1, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,210,87,.4)';
+      ctx.beginPath(); ctx.arc(px + 1.3, py - 0.05, 0.22, 0, Math.PI * 2); ctx.fill();
+    }
+    const bob = Math.sin(Date.now() / 300) * 0.05;
+    ctx.fillStyle = '#ffd257'; ctx.font = 'bold 0.7px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('!', px - 0.3, py - 0.55 + bob);
+  },
+  hitTest(worldX, worldY){
+    if(state.truckState !== 'offering') return false;
+    if(worldX < this.x - 1.5 || worldX > this.x + 1.5) return false;
+    if(worldY < this.baseY - 0.7 || worldY > this.baseY + 0.9) return false;
+    return true;
+  }
+};
+function startTruckCycle(){
+  state.truckState = 'offering';
+  state.truckOfferTimer = TRUCK_OFFER;
+  truck.x = -12; truck.arrived = false; truck.targetX = (DOOR.x - 1.2);
+  toast(t('truckArrived'), '#ffb070');
+}
+function endTruckCycle(){ state.truckState = 'away'; state.truckTimer = TRUCK_CYCLE; }
+
+/* ------------------------------ 7. ЗАДАНИЯ -------------------------------- */
+function genTasks(){
+  const list = [];
+  const shuffled = TASK_DEFS.slice().sort(() => Math.random() - 0.5);
+  for(let i = 0; i < 10; i++){
+    const def = shuffled[i % shuffled.length];
+    const target = randInt(def.min, def.max);
+    list.push({t: def.id, target, reward: def.rew(target), claimed: false});
+  }
+  state.tasks = list;
+  state.ds = {sell:0, earn:0, serve:0, buy:0, place:0, stock:0, expand:0};
+  state.tasksDate = todayStr();
+}
+function checkDailyReset(){ if(state.tasksDate !== todayStr() || !state.tasks.length) genTasks(); }
+function taskText(task){
+  const def = TASK_DEFS.find(d => d.id === task.t);
+  if(!def) return '';
+  return (state.lang === 'en' ? def.en : def.ru).replace('{n}', task.target);
+}
+function taskProgress(task){ return Math.min(task.target, state.ds[task.t] || 0); }
+function tasksReadyCount(){
+  let n = 0;
+  for(const tk of state.tasks) if(!tk.claimed && taskProgress(tk) >= tk.target) n++;
+  return n;
+}
+
+/* ------------------------------ 8. МУЗЫКА --------------------------------- */
+const Music = {
+  ctx: null, gain: null, timer: null, playing: false, enabled: true, step: 0,
+  scale: [261.63,293.66,329.63,349.23,392.00,440.00,493.88,523.25,587.33,659.25],
+  bass: [65.41,73.42,82.41,98.00],
+  init(){
+    if(this.ctx) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    this.ctx = new AC();
+    this.gain = this.ctx.createGain();
+    this.gain.gain.value = 0.12;
+    this.gain.connect(this.ctx.destination);
+  },
+  start(){
+    this.init();
+    if(!this.ctx || this.playing || !this.enabled) return;
+    if(this.ctx.state === 'suspended') this.ctx.resume();
+    this.playing = true; this.step = 0;
+    this.tick();
+    this.timer = setInterval(() => this.tick(), 420);
+  },
+  stop(){ this.playing = false; if(this.timer){ clearInterval(this.timer); this.timer = null; } },
+  setEnabled(v){ this.enabled = v; if(v) this.start(); else this.stop(); },
+  note(freq, dur, vol, type){
+    if(!this.ctx || !this.playing) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    osc.type = type || 'sine'; osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol, now + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    osc.connect(g); g.connect(this.gain);
+    osc.start(now); osc.stop(now + dur + 0.05);
+  },
+  tick(){
+    if(!this.playing) return;
+    const s = this.step++;
+    const n = this.scale[(s * 3 + (s >> 2)) % this.scale.length];
+    this.note(n, 0.45, 0.055, 'triangle');
+    if(s % 4 === 0){
+      const b = this.bass[(s >> 2) % this.bass.length];
+      this.note(b, 1.2, 0.07, 'sine');
+      this.note(b * 1.5, 1.0, 0.035, 'sine');
+    }
+    if(s % 8 === 0) this.note(n * 2, 0.3, 0.025, 'sine');
+  }
+};
+
+/* ------------------------------ 9. РЕНДЕР --------------------------------- */
+let CS = 40;         // текущая клетка в пикселях (с учётом зума)
+let baseCS = 40;     // базовая клетка без зума
+let zoom = 1;        // коэффициент зума
+const ZOOM_MIN = 0.5, ZOOM_MAX = 3;
+let baseOX = 0, baseOY = 0;
+let camX = 0, camY = 0;
+let dragging = false, dragMoved = false;
+let dragStartX = 0, dragStartY = 0, dragBaseCamX = 0, dragBaseCamY = 0;
+
+/* Мульти-тач для пинч-зума */
+const activePointers = new Map();
+let pinchStartDist = 0;
+let pinchStartZoom = 1;
+
+function resize(){
+  const w = canvas.clientWidth || window.innerWidth;
+  const h = canvas.clientHeight || window.innerHeight;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  canvas.width = Math.floor(w * dpr);
+  canvas.height = Math.floor(h * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const topbarH = $('#topbar').offsetHeight || 52;
+  const bottombarH = $('#bottombar').offsetHeight || 70;
+  const availTop = topbarH + 6;
+  const availBottom = h - bottombarH - 6;
+  const availH = availBottom - availTop;
+  const availW = w - 12;
+
+  baseCS = Math.min((availW - 2 * 20) / GW, (availH - 2 * 20) / GH);
+  baseCS = Math.max(12, baseCS);
+  CS = baseCS * zoom;
+
+  baseOX = (w - GW * CS) / 2;
+  baseOY = availTop + (availH - GH * CS) / 2;
+  clampCamera();
+}
+function setZoom(z){
+  zoom = clamp(z, ZOOM_MIN, ZOOM_MAX);
+  resize();
+}
+function clampCamera(){
+  const maxPan = CS * 4;
+  camX = clamp(camX, -maxPan, maxPan);
+  camY = clamp(camY, -maxPan, maxPan);
+}
+function getOX(){ return baseOX + camX; }
+function getOY(){ return baseOY + camY; }
+
+function draw(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+  skyGrad.addColorStop(0, '#0d1219'); skyGrad.addColorStop(1, '#1a2330');
+  ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, w, h);
+
+  ctx.save();
+  ctx.translate(getOX(), getOY());
+
+  drawOutside();
+  drawWalls();
+  drawFloor();
+  drawDirt();
+  drawWindows();
+
+  ctx.save(); ctx.scale(CS, CS); truck.draw(); ctx.restore();
+
+  ctx.save();
+  ctx.scale(CS, CS);
+  ctx.lineJoin = 'round';
+  drawCashier();
+  for(let y = 0; y < GH; y++){
+    for(let x = 0; x < GW; x++){
+      const c = state.grid[y][x];
+      if(c.u && c.t) drawFurniture(x, y, c);
+    }
+  }
+  if(placeMode){
+    ctx.lineWidth = 0.06;
+    for(let y = 0; y < GH; y++) for(let x = 0; x < GW; x++){
+      const c = state.grid[y][x];
+      if(!c.u) continue;
+      if(placeMode.kind === 'furniture' && !c.t && !c.door){
+        ctx.strokeStyle = 'rgba(74,137,255,.9)';
+        ctx.strokeRect(x + 0.06, y + 0.06, 0.88, 0.88);
+      }
+      if(placeMode.kind === 'stock' && c.t && c.t !== 'counter' && shelfQty(c) < shelfCapacity(c)){
+        ctx.strokeStyle = 'rgba(127,208,127,.85)';
+        ctx.strokeRect(x + 0.06, y + 0.06, 0.88, 0.88);
+      }
+    }
+  }
+  // Тела клиентов
+  for(const c of customers) drawCustomerBody(c);
+  ctx.restore();
+
+  // Рамка магазина
+  ctx.strokeStyle = '#2b3648';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-1, -1, GW * CS + 2, GH * CS + 2);
+
+  ctx.restore(); // конец translate
+
+  // ===== ПУЗЫРИ ТОВАРОВ РИСУЕМ ПОСЛЕ ВСЕГО — В ЭКРАННЫХ КООРДИНАТАХ =====
+  for(const c of customers) drawCustomerBubbleScreen(c);
+}
+
+/* --------- 9a. ГОРОДОК --------- */
+function drawOutside(){
+  const MB = OUT_MARGIN;
+  const totalW = GW * CS, totalH = GH * CS;
+  const sidewalkW = 34 * zoom;
+  const roadW = 46 * zoom;
+  const sidewalkOuter = MB * zoom;
+  const buildingGap = 12 * zoom;
+  const ring1 = sidewalkW;
+  const ring2 = sidewalkW + roadW;
+  const ring3 = ring2 + sidewalkOuter;
+  const buildingStart = ring3 + buildingGap;
+  const bgPad = buildingStart + 120 * zoom;
+
+  ctx.fillStyle = '#171d26';
+  ctx.fillRect(-bgPad, -bgPad, totalW + bgPad * 2, totalH + bgPad * 2);
+
+  drawBgSkyline(-bgPad, -bgPad, totalW + bgPad * 2, bgPad, true);
+  drawBgSkyline(-bgPad, totalH + ring3, totalW + bgPad * 2, bgPad, false);
+  drawSideBg(-bgPad, 0, bgPad, totalH);
+  drawSideBg(totalW + ring3, 0, bgPad, totalH);
+
+  ctx.fillStyle = '#2b2f37';
+  ctx.fillRect(-ring2, -ring2, totalW + ring2 * 2, totalH + ring2 * 2);
+
+  ctx.strokeStyle = 'rgba(255,240,150,.7)';
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([18 * zoom, 16 * zoom]);
+  const midTopY = -(sidewalkW + roadW / 2);
+  const midBotY = totalH + sidewalkW + roadW / 2;
+  const midLeftX = -(sidewalkW + roadW / 2);
+  const midRightX = totalW + sidewalkW + roadW / 2;
+  ctx.beginPath(); ctx.moveTo(-ring2, midTopY); ctx.lineTo(totalW + ring2, midTopY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-ring2, midBotY); ctx.lineTo(totalW + ring2, midBotY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(midLeftX, -ring2); ctx.lineTo(midLeftX, totalH + ring2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(midRightX, -ring2); ctx.lineTo(midRightX, totalH + ring2); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = '#5a6470';
+  ctx.fillRect(-ring1, -ring1, totalW + ring1 * 2, totalH + ring1 * 2);
+
+  ctx.fillStyle = '#4f5864';
+  ctx.fillRect(-ring3, -ring3, totalW + ring3 * 2, ring3 - ring2);
+  ctx.fillRect(-ring3, totalH + ring2, totalW + ring3 * 2, ring3 - ring2);
+  ctx.fillRect(-ring3, -ring2, ring3 - ring2, totalH + ring2 * 2);
+  ctx.fillRect(totalW + ring2, -ring2, ring3 - ring2, totalH + ring2 * 2);
+
+  ctx.strokeStyle = 'rgba(0,0,0,.2)';
+  ctx.lineWidth = 1;
+  const tile = 16 * zoom;
+  for(let x = -ring1; x <= totalW + ring1; x += tile){
+    ctx.beginPath(); ctx.moveTo(x, -ring1); ctx.lineTo(x, 0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, totalH); ctx.lineTo(x, totalH + ring1); ctx.stroke();
+  }
+  for(let y = -ring1; y <= totalH + ring1; y += tile){
+    ctx.beginPath(); ctx.moveTo(-ring1, y); ctx.lineTo(0, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(totalW, y); ctx.lineTo(totalW + ring1, y); ctx.stroke();
+  }
+  for(let x = -ring3; x <= totalW + ring3; x += tile){
+    ctx.beginPath(); ctx.moveTo(x, -ring3); ctx.lineTo(x, -ring2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, totalH + ring2); ctx.lineTo(x, totalH + ring3); ctx.stroke();
+  }
+  for(let y = -ring3; y <= totalH + ring3; y += tile){
+    ctx.beginPath(); ctx.moveTo(-ring3, y); ctx.lineTo(-ring2, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(totalW + ring2, y); ctx.lineTo(totalW + ring3, y); ctx.stroke();
+  }
+
+  const doorX = DOOR.x * CS;
+  const doorY = (DOOR.y + 1) * CS;
+  ctx.fillStyle = '#7f8a96';
+  ctx.fillRect(doorX - 3, doorY, CS + 6, ring1);
+  ctx.strokeStyle = 'rgba(0,0,0,.3)';
+  ctx.strokeRect(doorX - 3, doorY, CS + 6, ring1);
+  ctx.strokeStyle = 'rgba(255,255,255,.35)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(doorX + CS / 2, doorY + 2);
+  ctx.lineTo(doorX + CS / 2, doorY + ring1 - 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const bh = 70 * zoom;
+  const bw = 70 * zoom;
+  drawBuildingRow(-bgPad, -buildingStart - bh, totalW + bgPad * 2, bh, true);
+  drawBuildingRow(-bgPad, totalH + buildingStart, totalW + bgPad * 2, bh, false);
+  drawBuildingColumn(-buildingStart - bw, -bgPad, bw, totalH + bgPad * 2, true);
+  drawBuildingColumn(totalW + buildingStart, -bgPad, bw, totalH + bgPad * 2, false);
+
+  drawBench(totalW + ring1 - 8 * zoom, totalH / 2);
+  drawBench(-ring1 + 8 * zoom, totalH / 2);
+  drawLamp(-ring1 + 10 * zoom, doorY + ring1 / 2);
+  drawTreeCtx(-ring1 + 14 * zoom, -ring1 + 14 * zoom);
+  drawTreeCtx(totalW - 14 * zoom, -ring1 + 14 * zoom);
+  drawTreeCtx(totalW / 2, -ring1 + 12 * zoom);
+  drawTreeCtx(-ring1 + 22 * zoom, totalH + ring1 - 14 * zoom);
+  drawTreeCtx(totalW - 22 * zoom, totalH + ring1 - 14 * zoom);
+  drawBush(-ring1 - 4 * zoom, totalH - ring1 / 2);
+  drawBush(totalW + ring1 + 4 * zoom, -ring1 / 2);
+}
+
+function drawBuildingRow(x, y, w, h, isTop){
+  const colors = ['#2a3a4d','#3a4a5d','#2f4050','#354a5c','#28425c'];
+  const roofColors = ['#4a2f2f','#3d3d55','#4a3d2f','#2f4a3d'];
+  let cx = x, idx = 0;
+  const zf = zoom;
+  while(cx < x + w){
+    const bw = (55 + ((idx * 17) % 35)) * zf;
+    const bh = h + ((idx * 13) % 25) * zf;
+    const col = colors[idx % colors.length];
+    const roofCol = roofColors[idx % roofColors.length];
+    const yBase = isTop ? (y + (h - bh)) : y;
+    ctx.fillStyle = col;
+    ctx.fillRect(cx, yBase, bw, bh);
+    ctx.fillStyle = roofCol;
+    if(isTop) ctx.fillRect(cx - 3, yBase - 6 * zf, bw + 6, 7 * zf);
+    else ctx.fillRect(cx - 3, yBase + bh - 1, bw + 6, 6 * zf);
+    ctx.fillStyle = 'rgba(255,225,130,.6)';
+    const cols = Math.max(2, Math.floor(bw / (18 * zf)));
+    for(let i = 0; i < cols; i++){
+      for(let j = 0; j < 2; j++){
+        const wx = cx + 6 * zf + i * 16 * zf;
+        const wy = yBase + 10 * zf + j * 20 * zf;
+        if(wx + 9 * zf < cx + bw - 4 && wy + 12 * zf < yBase + bh - 4){
+          ctx.fillRect(wx, wy, 9 * zf, 12 * zf);
+        }
+      }
+    }
+    cx += bw + 8 * zf; idx++;
+  }
+}
+function drawBuildingColumn(x, y, w, h, isLeft){
+  const colors = ['#2a3a4d','#3a4a5d','#354a5c'];
+  const roofColors = ['#4a2f2f','#3d3d55','#4a3d2f'];
+  let cy = y, idx = 0;
+  const zf = zoom;
+  while(cy < y + h){
+    const bh = (60 + ((idx * 21) % 40)) * zf;
+    const bw = w + ((idx * 11) % 20) * zf;
+    const col = colors[idx % colors.length];
+    const xBase = isLeft ? (x + (w - bw)) : x;
+    ctx.fillStyle = col;
+    ctx.fillRect(xBase, cy, bw, bh);
+    ctx.fillStyle = roofColors[idx % roofColors.length];
+    if(isLeft) ctx.fillRect(xBase - 6 * zf, cy - 3, 7 * zf, bh + 6);
+    else ctx.fillRect(xBase + bw - 1, cy - 3, 6 * zf, bh + 6);
+    ctx.fillStyle = 'rgba(255,225,130,.55)';
+    for(let i = 0; i < 2; i++){
+      for(let j = 0; j < 3; j++){
+        const wx = xBase + 8 * zf + i * 20 * zf;
+        const wy = cy + 12 * zf + j * 22 * zf;
+        if(wx + 10 * zf < xBase + bw - 4 && wy + 12 * zf < cy + bh - 4){
+          ctx.fillRect(wx, wy, 10 * zf, 12 * zf);
+        }
+      }
+    }
+    cy += bh + 10 * zf; idx++;
+  }
+}
+function drawBgSkyline(x, y, w, h, isTop){
+  ctx.fillStyle = '#20262f';
+  let cx = x, idx = 0;
+  const zf = zoom;
+  while(cx < x + w){
+    const bw = (40 + ((idx * 19) % 45)) * zf;
+    const bh = h - 10 * zf - ((idx * 11) % 25) * zf;
+    const yBase = isTop ? (y + h - bh) : y;
+    ctx.fillRect(cx, yBase, bw, bh);
+    ctx.fillStyle = 'rgba(255,220,120,.25)';
+    for(let i = 0; i < Math.floor(bw / (20 * zf)); i++){
+      ctx.fillRect(cx + 6 * zf + i * 20 * zf, yBase + 8 * zf + (idx % 3) * 10 * zf, 6 * zf, 8 * zf);
+    }
+    ctx.fillStyle = '#20262f';
+    cx += bw + 6 * zf; idx++;
+  }
+}
+function drawSideBg(x, y, w, h){
+  ctx.fillStyle = '#20262f';
+  let cy = y, idx = 0;
+  const zf = zoom;
+  while(cy < y + h){
+    const bh = (60 + ((idx * 17) % 40)) * zf;
+    ctx.fillRect(x, cy, w - 10 * zf, bh);
+    ctx.fillStyle = 'rgba(255,220,120,.2)';
+    for(let j = 0; j < Math.floor(bh / (24 * zf)); j++){
+      ctx.fillRect(x + 6 * zf, cy + 8 * zf + j * 22 * zf, 8 * zf, 10 * zf);
+    }
+    ctx.fillStyle = '#20262f';
+    cy += bh + 8 * zf; idx++;
+  }
+}
+function drawTreeCtx(x, y){
+  const zf = zoom;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = '#4a2f1c'; ctx.fillRect(-2 * zf, 2 * zf, 4 * zf, 8 * zf);
+  ctx.fillStyle = '#3b7a3f'; ctx.beginPath(); ctx.arc(0, 0, 9 * zf, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#4a8c4e'; ctx.beginPath(); ctx.arc(-3 * zf, -2 * zf, 7 * zf, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4 * zf, -1 * zf, 6 * zf, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#5da063'; ctx.beginPath(); ctx.arc(-1 * zf, -4 * zf, 3.5 * zf, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function drawLamp(x, y){
+  const zf = zoom;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = '#3a4149'; ctx.fillRect(-1 * zf, -4 * zf, 2 * zf, 16 * zf);
+  ctx.beginPath(); ctx.arc(0, -6 * zf, 5 * zf, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,235,150,.35)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -6 * zf, 3 * zf, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff1a8'; ctx.fill();
+  ctx.restore();
+}
+function drawBench(x, y){
+  const zf = zoom;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = '#7a4a22'; ctx.fillRect(-10 * zf, -3 * zf, 20 * zf, 3 * zf); ctx.fillRect(-10 * zf, 1 * zf, 20 * zf, 2 * zf);
+  ctx.fillStyle = '#5d381a'; ctx.fillRect(-9 * zf, -6 * zf, 2 * zf, 9 * zf); ctx.fillRect(7 * zf, -6 * zf, 2 * zf, 9 * zf);
+  ctx.restore();
+}
+function drawBush(x, y){
+  const zf = zoom;
+  ctx.save();
+  ctx.fillStyle = '#2f6334'; ctx.beginPath(); ctx.arc(x, y, 6 * zf, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#3d7a42';
+  ctx.beginPath(); ctx.arc(x - 3 * zf, y - 1 * zf, 4 * zf, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(x + 3 * zf, y - 1 * zf, 3.5 * zf, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function drawWalls(){
+  const wall = WALLS[state.decor.wall] || WALLS[0];
+  ctx.fillStyle = wall.floor;
+  ctx.fillRect(0, 0, GW * CS, GH * CS);
+}
+function drawFloor(){
+  const wall = WALLS[state.decor.wall] || WALLS[0];
+  const isNeon = state.decor.wall === 4;
+  const lvl = getLevel();
+  const maxCells = maxCellsForLevel(lvl);
+  for(let y = 0; y < GH; y++){
+    for(let x = 0; x < GW; x++){
+      const c = state.grid[y][x];
+      const px = x * CS, py = y * CS;
+      if(c.u){
+        ctx.fillStyle = (x + y) % 2 === 0 ? wall.floor : shade(wall.floor, -8);
+        ctx.fillRect(px, py, CS, CS);
+        ctx.strokeStyle = wall.line; ctx.lineWidth = 1;
+        ctx.strokeRect(px + 0.5, py + 0.5, CS - 1, CS - 1);
+        if(c.door){
+          ctx.fillStyle = isNeon ? 'rgba(74,137,255,.3)' : 'rgba(74,137,255,.2)';
+          ctx.fillRect(px + 1, py + 1, CS - 2, CS - 2);
+          ctx.fillStyle = '#4a89ff';
+          ctx.beginPath(); ctx.arc(px + CS * 0.5, py + CS * 0.5, CS * 0.16, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(px + CS * 0.5 + 6, py + CS * 0.5);
+          ctx.lineTo(px + CS * 0.5 - 6, py + CS * 0.5);
+          ctx.moveTo(px + CS * 0.5 - 6, py + CS * 0.5);
+          ctx.lineTo(px + CS * 0.5 - 2, py + CS * 0.5 - 3);
+          ctx.moveTo(px + CS * 0.5 - 6, py + CS * 0.5);
+          ctx.lineTo(px + CS * 0.5 - 2, py + CS * 0.5 + 3);
+          ctx.stroke();
+        }
+      } else {
+        ctx.fillStyle = '#0b0f15';
+        ctx.fillRect(px, py, CS, CS);
+        if(isAdjacentToUnlocked(x, y)){
+          const atCap = unlockedCount() >= maxCells;
+          const pr = expandPrice();
+          ctx.strokeStyle = atCap ? 'rgba(255,90,90,.35)' : 'rgba(74,137,255,.35)';
+          ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+          ctx.strokeRect(px + 2, py + 2, CS - 4, CS - 4);
+          ctx.setLineDash([]);
+          ctx.fillStyle = atCap ? 'rgba(255,120,120,.55)' : 'rgba(200,220,255,.4)';
+          ctx.font = 'bold ' + Math.max(8, CS * 0.22) + 'px system-ui';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(atCap ? '\uD83D\uDD12' : fmt(pr), px + CS / 2, py + CS / 2);
+        }
+      }
+    }
+  }
+}
+function drawDirt(){
+  for(const d of state.dirt){
+    const px = d.x * CS, py = d.y * CS;
+    if(d.type === 0){
+      ctx.fillStyle = 'rgba(90,60,30,.55)';
+      ctx.beginPath(); ctx.ellipse(px + CS * 0.35, py + CS * 0.55, CS * 0.22, CS * 0.16, 0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(60,40,20,.5)';
+      ctx.beginPath(); ctx.ellipse(px + CS * 0.55, py + CS * 0.6, CS * 0.12, CS * 0.09, 0, 0, Math.PI * 2); ctx.fill();
+    } else if(d.type === 1){
+      ctx.fillStyle = 'rgba(50,40,30,.5)';
+      ctx.beginPath(); ctx.ellipse(px + CS * 0.3, py + CS * 0.4, CS * 0.09, CS * 0.13, -0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(px + CS * 0.55, py + CS * 0.55, CS * 0.09, CS * 0.13, -0.4, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.fillStyle = 'rgba(230,220,180,.85)';
+      ctx.fillRect(px + CS * 0.3, py + CS * 0.4, CS * 0.16, CS * 0.12);
+      ctx.fillStyle = 'rgba(180,150,100,.7)';
+      ctx.fillRect(px + CS * 0.35, py + CS * 0.42, CS * 0.06, CS * 0.06);
+    }
+    const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 350);
+    ctx.strokeStyle = `rgba(143,211,255,${0.3 + pulse * 0.5})`;
+    ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]);
+    ctx.strokeRect(px + 2, py + 2, CS - 4, CS - 4);
+    ctx.setLineDash([]);
+  }
+}
+function drawWindows(){
+  const w = state.decor.window;
+  const topY = -CS * 0.16;
+  const count = 4;
+  const ww = (GW * CS) / count;
+  for(let i = 0; i < count; i++){
+    const px = i * ww + ww * 0.15;
+    const py = topY;
+    const pw = ww * 0.7;
+    const ph = CS * 0.14;
+    if(w === 0){
+      ctx.fillStyle = '#8fd3ff'; ctx.fillRect(px, py, pw, ph);
+      ctx.strokeStyle = '#5b8fb0'; ctx.lineWidth = 1.5; ctx.strokeRect(px, py, pw, ph);
+    } else if(w === 1){
+      ctx.fillStyle = '#a8e0ff'; ctx.fillRect(px, py, pw, ph * 1.3);
+      ctx.strokeStyle = '#5b8fb0'; ctx.lineWidth = 1.5; ctx.strokeRect(px, py, pw, ph * 1.3);
+      ctx.beginPath(); ctx.moveTo(px + pw / 2, py); ctx.lineTo(px + pw / 2, py + ph * 1.3); ctx.stroke();
+    } else {
+      const cols = ['#ff6b6b','#ffd93d','#6bcB77','#4d96ff'];
+      for(let j = 0; j < 4; j++){
+        ctx.fillStyle = cols[(i + j) % 4];
+        ctx.fillRect(px + (j % 2) * pw / 2, py + Math.floor(j / 2) * ph * 0.65, pw / 2, ph * 0.65);
+      }
+      ctx.strokeStyle = '#5b8fb0'; ctx.lineWidth = 1.5; ctx.strokeRect(px, py, pw, ph * 1.3);
+    }
+  }
+}
+function drawFurniture(gx, gy, c){
+  const x = gx, y = gy;
+  const img = furnSprite(c.t);
+  if(img && img.complete && img.naturalWidth){
+    ctx.drawImage(img, x + 0.06, y + 0.06, 0.88, 0.88);
+  } else {
+    ctx.fillStyle = '#8a5a2b';
+    ctx.fillRect(x + 0.08, y + 0.08, 0.84, 0.84);
+  }
+  if(c.t !== 'counter' && c.stock && c.stock.length){
+    const total = shelfQty(c);
+    const cap = shelfCapacity(c);
+    let idx = 0;
+    const maxShow = 6;
+    for(let i = 0; i < c.stock.length && idx < maxShow; i++){
+      const s = c.stock[i];
+      const p = PROD_BY_ID[s.id];
+      if(!p) continue;
+      const spr = prodSprite(p);
+      const show = s.n > 1 ? 2 : 1;
+      for(let k = 0; k < show && idx < maxShow; k++){
+        const px = x + 0.14 + (idx % 3) * 0.26;
+        const py = y + 0.16 + Math.floor(idx / 3) * 0.34;
+        if(spr && spr.complete && spr.naturalWidth){
+          ctx.drawImage(spr, px, py, 0.22, 0.22);
+        } else {
+          ctx.fillStyle = p.color;
+          ctx.fillRect(px, py, 0.22, 0.22);
+        }
+        idx++;
+      }
+    }
+    const ratio = total / cap;
+    if(ratio < 0.35){
+      ctx.fillStyle = 'rgba(255,90,90,.9)';
+      ctx.beginPath(); ctx.arc(x + 0.86, y + 0.14, 0.06, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+
+function drawPerson(px, py, dir, bob, walking, walkPhase, skin, hair, shirt, opts){
+  opts = opts || {};
+  const scale = opts.scale || 1;
+  ctx.save();
+  ctx.translate(px, py + bob);
+  ctx.rotate(dir - Math.PI / 2);
+  ctx.scale(scale, scale);
+  if(walking){
+    const legPhase = Math.sin(walkPhase);
+    ctx.fillStyle = '#2b3546';
+    ctx.beginPath(); ctx.ellipse(-0.12, 0.18 + legPhase * 0.05, 0.09, 0.13, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0.12, 0.18 - legPhase * 0.05, 0.09, 0.13, 0, 0, Math.PI * 2); ctx.fill();
+  } else {
+    ctx.fillStyle = '#2b3546';
+    ctx.beginPath(); ctx.ellipse(-0.1, 0.18, 0.08, 0.12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0.1, 0.18, 0.08, 0.12, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = shirt;
+  ctx.beginPath(); ctx.ellipse(0, 0, 0.28, 0.24, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = shade(shirt, -50); ctx.lineWidth = 0.025; ctx.stroke();
+  ctx.fillStyle = skin;
+  const swing = walking ? Math.sin(walkPhase) * 0.03 : 0;
+  ctx.beginPath(); ctx.arc(-0.27, swing, 0.075, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(0.27, -swing, 0.075, 0, Math.PI * 2); ctx.fill();
+  if(opts.badge){
+    ctx.fillStyle = '#ffd257'; ctx.fillRect(-0.06, 0.02, 0.12, 0.06);
+    ctx.fillStyle = '#8a6a10'; ctx.fillRect(-0.05, 0.04, 0.1, 0.02);
+  }
+  ctx.fillStyle = skin;
+  ctx.beginPath(); ctx.arc(0, -0.13, 0.17, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = shade(skin, -45); ctx.lineWidth = 0.02; ctx.stroke();
+  ctx.fillStyle = hair;
+  ctx.beginPath(); ctx.arc(0, -0.17, 0.165, Math.PI, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, -0.2, 0.16, 0.09, 0, 0, Math.PI * 2); ctx.fill();
+  const faceY = -0.09;
+  ctx.fillStyle = '#1b2330';
+  ctx.beginPath(); ctx.arc(-0.06, faceY, 0.026, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(0.06, faceY, 0.026, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.9)';
+  ctx.beginPath(); ctx.arc(-0.052, faceY - 0.006, 0.008, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(0.068, faceY - 0.006, 0.008, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#5a3a20'; ctx.lineWidth = 0.018;
+  ctx.beginPath(); ctx.arc(0, -0.035, 0.045, 0.15, Math.PI - 0.15); ctx.stroke();
+  if(opts.cart){
+    ctx.fillStyle = '#c9a227'; ctx.fillRect(-0.1, -0.36, 0.2, 0.16);
+    ctx.strokeStyle = '#8a6a10'; ctx.lineWidth = 0.02; ctx.strokeRect(-0.1, -0.36, 0.2, 0.16);
+  }
+  ctx.restore();
+}
+function drawCustomerBody(c){
+  ctx.save();
+  ctx.globalAlpha = clamp(c.alpha, 0, 1);
+  ctx.fillStyle = 'rgba(0,0,0,.22)';
+  ctx.beginPath(); ctx.ellipse(c.x, c.y + 0.28, 0.3, 0.13, 0, 0, Math.PI * 2); ctx.fill();
+  const walking = c.path.length > 0 || c.state === 'gone';
+  const hasCart = c.cart.length && (c.state === 'toCashier' || c.state === 'paying' || c.state === 'waiting');
+  drawPerson(c.x, c.y, c.dir, c.bob, walking, c.walk, c.skin, c.hair, c.shirt, {cart: hasCart});
+  if(c.state === 'waiting'){
+    ctx.fillStyle = 'rgba(255,210,87,.95)';
+    ctx.font = 'bold 0.3px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText('!', c.x, c.y - 0.5);
+  }
+  ctx.restore();
+}
+
+/* === ПУЗЫРИ В ЭКРАННЫХ КООРДИНАТАХ — ВСЕГДА ПОВЕРХ === */
+function drawCustomerBubbleScreen(c){
+  if(!c.bubble || c.bubbleT <= 0) return;
+  const p = PROD_BY_ID[c.bubble];
+  if(!p) return;
+  const topbarH = $('#topbar').offsetHeight || 52;
+  const size = Math.max(30, CS * 0.44);
+
+  let sx = getOX() + c.x * CS;
+  let sy = getOY() + (c.y - 0.5) * CS - CS * 0.35;
+
+  // Если пузырь уходит выше топбара — переносим под покупателя
+  let tailUp = true;
+  if(sy - size / 2 < topbarH + 4){
+    sy = getOY() + (c.y + 0.5) * CS + CS * 0.6;
+    tailUp = false;
+  }
+
+  ctx.save();
+  ctx.globalAlpha = clamp(c.alpha, 0, 1);
+
+  // тень
+  ctx.fillStyle = 'rgba(0,0,0,.4)';
+  if(ctx.roundRect){
+    ctx.beginPath();
+    ctx.roundRect(sx - size/2 + 3, sy - size/2 + 4, size, size, size*0.22);
+    ctx.fill();
+  }
+
+  // пузырь
+  ctx.fillStyle = 'rgba(255,255,255,.98)';
+  if(ctx.roundRect){
+    ctx.beginPath();
+    ctx.roundRect(sx - size/2, sy - size/2, size, size, size*0.22);
+    ctx.fill();
+  } else {
+    ctx.fillRect(sx - size/2, sy - size/2, size, size);
+  }
+  ctx.strokeStyle = '#4a89ff';
+  ctx.lineWidth = Math.max(2, CS * 0.04);
+  ctx.stroke();
+
+  // хвостик
+  const tw = size * 0.18;
+  const th = size * 0.24;
+  ctx.beginPath();
+  if(tailUp){
+    ctx.moveTo(sx - tw, sy + size/2 - 1);
+    ctx.lineTo(sx, sy + size/2 + th);
+    ctx.lineTo(sx + tw, sy + size/2 - 1);
+  } else {
+    ctx.moveTo(sx - tw, sy - size/2 + 1);
+    ctx.lineTo(sx, sy - size/2 - th);
+    ctx.lineTo(sx + tw, sy - size/2 + 1);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,.98)';
+  ctx.fill();
+  ctx.stroke();
+
+  // иконка товара
+  const spr = prodSprite(p);
+  if(spr && spr.complete && spr.naturalWidth){
+    ctx.drawImage(spr, sx - size*0.36, sy - size*0.36, size*0.72, size*0.72);
+  }
+
+  ctx.restore();
+}
+
+function drawCashier(){
+  const c = cashier;
+  if(!c) return;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.22)';
+  ctx.beginPath(); ctx.ellipse(c.x, c.y + 0.28, 0.26, 0.1, 0, 0, Math.PI * 2); ctx.fill();
+  drawPerson(c.x, c.y, Math.PI / 2, c.bob, false, 0, c.skin, c.hair, c.shirt, {badge: true, scale: 0.85});
+  ctx.restore();
+}
+
+/* ------------------------------ 10. ЛОГИКА -------------------------------- */
+const customers = [];
+let spawnTimer = 8;
+function updateWorld(dt){
+  cashier.update(dt);
+  truck.update(dt);
+  for(const c of customers) c.update(dt);
+  for(let i = customers.length - 1; i >= 0; i--){
+    if(customers[i].dead) customers.splice(i, 1);
+  }
+  const shelves = shelfCells().filter(s => s.c.stock.length > 0);
+  const counters = counterCells();
+  const maxCust = Math.min(8, 2 + Math.floor(shelves.length / 3));
+  spawnTimer -= dt;
+  if(spawnTimer <= 0){
+    spawnTimer = Math.max(3, (18 - shelves.length * 0.6) / spawnRateMul());
+    if(customers.length < maxCust && shelves.length > 0 && counters.length > 0){
+      customers.push(new Customer());
+    }
+  }
+  if(state.truckState === 'away'){
+    state.truckTimer -= dt;
+    if(state.truckTimer <= 0) startTruckCycle();
+  } else if(state.truckState === 'offering'){
+    state.truckOfferTimer -= dt;
+    if(state.truckOfferTimer <= 0){ endTruckCycle(); toast(t('truckLeft')); }
+  }
+}
+function addXP(amount){
+  if(amount <= 0) return;
+  const before = getLevel();
+  state.xp += amount;
+  const after = getLevel();
+  if(after > before) showLevelUp(after);
+  updateHUD();
+}
+function showLevelUp(newLevel){
+  const overlay = document.createElement('div');
+  overlay.className = 'levelup-overlay';
+  overlay.innerHTML = `
+    <div class="levelup-content">
+      <div class="levelup-burst"></div>
+      <div class="levelup-num">${newLevel}</div>
+      <div class="levelup-title">${t('levelUp')}</div>
+      <div class="levelup-sub">${t('levelUpSub')}</div>
+      <div class="levelup-hint">${state.lang === 'en' ? 'Tap to continue' : 'Нажмите, чтобы продолжить'}</div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const dismiss = () => {
+    overlay.style.transition = 'opacity .4s';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 420);
+    overlay.removeEventListener('click', dismiss);
+  };
+  overlay.addEventListener('click', dismiss);
+  setTimeout(dismiss, 3200);
+  if(state.music) Music.note(523.25, 0.5, 0.14, 'triangle');
+  setTimeout(() => { if(state.music) Music.note(659.25, 0.5, 0.14, 'triangle'); }, 140);
+  setTimeout(() => { if(state.music) Music.note(783.99, 0.7, 0.16, 'triangle'); }, 280);
+}
+
+/* Грузовик */
+function openTruckModal(){
+  if(state.truckState !== 'offering') return;
+  openModal(t('truckTitle'), el => {
+    const p = document.createElement('div');
+    p.style.cssText = 'text-align:center;padding:8px 4px';
+    p.innerHTML = `
+      <div style="font-size:60px;margin-bottom:6px">🚚</div>
+      <div style="font-size:15px;font-weight:600;line-height:1.4">${t('truckDesc')}</div>
+      <div style="font-size:13px;color:#ffd257;margin-top:10px;font-weight:800">SALE  x2</div>`;
+    el.appendChild(p);
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;margin-top:14px';
+    const accept = document.createElement('button');
+    accept.className = 'btn'; accept.style.cssText = 'flex:1;padding:13px;font-size:14px';
+    accept.textContent = t('truckAccept');
+    accept.onclick = async () => {
+      closeModal(); showAdOverlay(t('adLoading'));
+      try {
+        const res = await vkSend('VKWebAppShowNativeAds', {ad_format: 'reward'});
+        hideAdOverlay();
+        if(res && res.result){
+          state.bonusUntil = Date.now() + TRUCK_BONUS * 1000;
+          endTruckCycle(); updateHUD(); scheduleSave();
+          toast(t('bonusActive') + ' +2\u00D7 (' + TRUCK_BONUS + 's)', '#ffd257');
+          if(state.music) Music.note(880, 0.6, 0.15, 'triangle');
+        } else toast(t('adNotAvailable'));
+      } catch(e){ hideAdOverlay(); toast(t('adNotAvailable')); }
+    };
+    const decline = document.createElement('button');
+    decline.className = 'btn ghost'; decline.style.cssText = 'flex:1;padding:13px;font-size:14px';
+    decline.textContent = t('truckDecline');
+    decline.onclick = () => { closeModal(); endTruckCycle(); toast(t('truckLeft')); };
+    row.appendChild(accept); row.appendChild(decline);
+    el.appendChild(row);
+  });
+}
+
+/* Награды за время */
+function checkTimeRewards(){
+  const mins = state.playtime / 60;
+  for(let i = 0; i < TIME_REWARDS.length; i++){
+    if(state.claimedTimeRewards.indexOf(i) >= 0) continue;
+    const r = TIME_REWARDS[i];
+    if(mins >= r.min && state.notifiedTimeRewards.indexOf(i) < 0){
+      state.notifiedTimeRewards.push(i);
+      toast(t('rewardAvailable'), '#7fd07f');
+      if(state.music) Music.note(660, 0.4, 0.12, 'triangle');
+    }
+  }
+}
+function hasClaimableTimeReward(){
+  const mins = state.playtime / 60;
+  for(let i = 0; i < TIME_REWARDS.length; i++){
+    if(state.claimedTimeRewards.indexOf(i) >= 0) continue;
+    if(mins >= TIME_REWARDS[i].min) return true;
+  }
+  return false;
+}
+function claimTimeReward(idx){
+  if(state.claimedTimeRewards.indexOf(idx) >= 0) return;
+  const r = TIME_REWARDS[idx];
+  if(state.playtime / 60 < r.min) return;
+  state.claimedTimeRewards.push(idx);
+  state.money += r.amount;
+  addXP(Math.max(1, Math.round(r.amount * 0.5 * xpMul())));
+  scheduleSave();
+  toast('+' + fmt(r.amount) + ' \u20BF', '#ffd257');
+}
+function openTimeRewards(){
+  openModal(t('timeRewards'), el => {
+    const info = document.createElement('div');
+    info.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px';
+    info.innerHTML = `<div class="chip">${t('timePlayed')}: ${fmtTime(state.playtime)}</div>`;
+    el.appendChild(info);
+    const desc = document.createElement('div');
+    desc.style.cssText = 'font-size:12.5px;color:#8798ad;padding:2px 4px 10px';
+    desc.textContent = t('timeRewardsDesc');
+    el.appendChild(desc);
+    const mins = state.playtime / 60;
+    TIME_REWARDS.forEach((r, i) => {
+      const claimed = state.claimedTimeRewards.indexOf(i) >= 0;
+      const reached = mins >= r.min;
+      const row = document.createElement('div');
+      row.className = 'row' + (claimed ? '' : (reached ? '' : ' locked'));
+      const ic = document.createElement('div');
+      ic.className = 'ic';
+      ic.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#ffd257" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`;
+      const nm = document.createElement('div');
+      nm.className = 'nm';
+      nm.innerHTML = `<b>${r.min} ${t('minShort')}</b><span>${reached ? '+' + fmt(r.amount) + ' \u20BF' : t('needMore') + ' ' + Math.max(0, Math.ceil(r.min - mins)) + ' ' + t('minShort')}</span>`;
+      const b = document.createElement('button');
+      b.className = 'btn' + (claimed ? ' ghost' : (reached ? '' : ' ghost'));
+      b.textContent = claimed ? t('claimed') : t('claim');
+      b.disabled = claimed || !reached;
+      b.onclick = () => { claimTimeReward(i); closeModal(); openTimeRewards(); };
+      row.appendChild(ic); row.appendChild(nm); row.appendChild(b);
+      el.appendChild(row);
+    });
+  });
+}
+function openUpgrades(){
+  openModal(t('upgrades'), el => {
+    const top = document.createElement('div');
+    top.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
+    top.innerHTML = `<div class="chip">\uD83D\uDCB0 ${fmt(state.money)} \u20BF</div>`;
+    el.appendChild(top);
+    Object.keys(UPGRADES).forEach(key => {
+      const u = UPGRADES[key];
+      const lvl = upgradeLevel(key);
+      const maxed = lvl >= u.max;
+      const cost = maxed ? 0 : u.costs[lvl];
+      const canBuy = !maxed && state.money >= cost;
+      const row = document.createElement('div');
+      row.className = 'row';
+      const ic = document.createElement('div');
+      ic.className = 'ic';
+      ic.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#ffd257" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z"/></svg>`;
+      const nm = document.createElement('div');
+      nm.className = 'nm';
+      nm.innerHTML = `<b>${uname(key)} <span style="color:#8798ad;font-size:11px">${lvl}/${u.max}</span></b><span>${udesc(key)}</span>`;
+      const pr = document.createElement('div');
+      pr.className = 'pr'; pr.textContent = maxed ? t('maxed') : fmt(cost);
+      const b = document.createElement('button');
+      b.className = 'btn' + (canBuy ? '' : ' ghost');
+      b.textContent = maxed ? '\u2713' : t('buyUpgrade');
+      b.disabled = maxed || !canBuy;
+      b.onclick = () => {
+        if(maxed || state.money < cost) return;
+        state.money -= cost;
+        state.upgrades[key] = lvl + 1;
+        updateHUD(); scheduleSave();
+        toast(uname(key) + ' \u2192 ' + (lvl + 1), '#7fd07f');
+        closeModal(); openUpgrades();
+      };
+      row.appendChild(ic); row.appendChild(nm); row.appendChild(pr); row.appendChild(b);
+      el.appendChild(row);
+    });
+  });
+}
+function doPrestige(){
+  const savedLang = state.lang;
+  const savedMusic = state.music;
+  const savedTutorial = state.tutorialDone;
+  const savedUpgrades = JSON.parse(JSON.stringify(state.upgrades));
+  const newPrestige = state.prestige + 1;
+  state = newState();
+  state.lang = savedLang;
+  state.music = savedMusic;
+  state.tutorialDone = savedTutorial;
+  state.upgrades = savedUpgrades;
+  state.prestige = newPrestige;
+  initGrid();
+  checkDailyReset();
+  updateHUD(); scheduleSave();
+  toast(t('prestigeDone') + ' +5%', '#ffd257');
+  if(state.music) Music.note(880, 0.6, 0.15, 'triangle');
+}
+function openPrestige(){
+  openModal(t('prestige'), el => {
+    const lvl = getLevel();
+    const bonusPct = Math.round(PRESTIGE_BONUS * state.prestige * 100);
+    const info = document.createElement('div');
+    info.style.cssText = 'text-align:center;padding:8px';
+    info.innerHTML = `
+      <div style="font-size:60px;line-height:1">⭐</div>
+      <div style="font-size:16px;font-weight:800;color:#ffd257;margin-top:6px">+${bonusPct}%</div>
+      <div style="font-size:12px;color:#8798ad;margin-top:4px">${fmtStr(t('prestigeBonusTotal'), {n: bonusPct})}</div>
+      <div style="margin-top:10px" class="chip">${fmtStr(t('prestigeTotal'), {n: state.prestige})}</div>
+      <div style="margin-top:8px" class="chip">${t('level')} ${lvl} / ${PRESTIGE_LEVEL}</div>`;
+    el.appendChild(info);
+    if(!canPrestige()){
+      const w = document.createElement('div');
+      w.style.cssText = 'margin-top:14px;color:#8798ad;font-size:13px;text-align:center;padding:10px';
+      w.textContent = fmtStr(t('prestigeRequires'), {n: PRESTIGE_LEVEL});
+      el.appendChild(w);
+    } else {
+      const b = document.createElement('button');
+      b.className = 'btn gold';
+      b.style.cssText = 'width:100%;padding:14px;font-size:15px;margin-top:14px';
+      b.textContent = t('prestigeBtn') + ' (+5%)';
+      b.onclick = () => {
+        openModal(t('prestigeConfirmTitle'), el2 => {
+          const q = document.createElement('div');
+          q.style.cssText = 'text-align:center;padding:20px 10px;font-size:14.5px;font-weight:600;line-height:1.5';
+          q.textContent = t('prestigeConfirm');
+          el2.appendChild(q);
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+          const yes = document.createElement('button');
+          yes.className = 'btn gold';
+          yes.style.cssText = 'flex:1;padding:13px;font-size:14px';
+          yes.textContent = t('prestigeYes');
+          yes.onclick = () => { doPrestige(); closeModal(); };
+          const no = document.createElement('button');
+          no.className = 'btn ghost';
+          no.style.cssText = 'flex:1;padding:13px;font-size:14px';
+          no.textContent = t('cancel');
+          no.onclick = () => { closeModal(); openPrestige(); };
+          row.appendChild(yes); row.appendChild(no);
+          el2.appendChild(row);
+        });
+      };
+      el.appendChild(b);
+    }
+  });
+}
+
+/* ------------------------------- 11. ВВОД ---------------------------------- */
+function screenToCell(clientX, clientY){
+  const rect = canvas.getBoundingClientRect();
+  const gx = Math.floor((clientX - rect.left - getOX()) / CS);
+  const gy = Math.floor((clientY - rect.top - getOY()) / CS);
+  if(gx < 0 || gy < 0 || gx >= GW || gy >= GH) return null;
+  return {x: gx, y: gy};
+}
+function screenToWorld(clientX, clientY){
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left - getOX()) / CS,
+    y: (clientY - rect.top - getOY()) / CS
+  };
+}
+let placeMode = null;
+
+function onCellClick(gx, gy){
+  if(isTutorialBlocking() && tutorialStep <= 2) return;
+  if(dirtAtCell(gx, gy)){ cleanDirtAt(gx, gy); return; }
+  const c = cellAt(gx, gy);
+  if(!c) return;
+  if(placeMode && placeMode.kind === 'furniture'){
+    if(!c.u){ toast(t('noMoney')); return; }
+    if(c.t || c.door){ toast(t('occupied')); return; }
+    c.t = placeMode.type; c.stock = [];
+    state.ds.place++;
+    scheduleSave();
+    toast(t('placed') + ': ' + fname(placeMode.type), '#7fd07f');
+    placeMode = null; updatePlaceBar(); updateHUD();
+    return;
+  }
+  if(placeMode && placeMode.kind === 'stock'){
+    if(!c.u || !c.t || c.t === 'counter'){ return; }
+    if(!canAccept(c, placeMode.pid)){
+      toast(catName(PROD_BY_ID[placeMode.pid].cat) + ' \u2260 ' + fname(c.t));
+      return;
+    }
+    const avail = state.warehouse[placeMode.pid] || 0;
+    if(avail <= 0){ toast(t('nothing')); return; }
+    const added = addToShelf(c, placeMode.pid, avail);
+        if(added > 0){
+      state.warehouse[placeMode.pid] -= added;
+      if(state.warehouse[placeMode.pid] <= 0) delete state.warehouse[placeMode.pid];
+      state.ds.stock += added;
+      scheduleSave(); updateHUD();
+      checkTutorialStock();   // ← теперь через общую функцию
+    } else { toast(t('shelfFull')); return; }
+    if(!state.warehouse[placeMode.pid]){ placeMode = null; updatePlaceBar(); }
+    return;
+  }
+  if(!c.u){
+    if(!isAdjacentToUnlocked(gx, gy)){ toast(t('tooFar')); return; }
+    const maxCells = maxCellsForLevel(getLevel());
+    if(unlockedCount() >= maxCells){ toast(t('maxCells'), '#e0575b'); return; }
+    const price = expandPrice();
+    if(state.money < price){ toast(t('noMoney')); return; }
+    state.money -= price; c.u = true;
+    state.ds.expand++;
+    scheduleSave(); updateHUD();
+    toast(t('cellAdded'), '#7fd07f');
+    return;
+  }
+  if(c.t && c.t !== 'counter'){ openShelfInfo(gx, gy); }
+}
+
+/* === Pointer events с поддержкой пинч-зума === */
+canvas.addEventListener('pointerdown', e => {
+  if($('#modalRoot').style.display === 'block') return;
+  activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY});
+
+  if(activePointers.size === 2){
+    // Начинаем пинч
+    dragging = false;
+    dragMoved = false;
+    canvas.classList.remove('dragging');
+    const pts = [...activePointers.values()];
+    pinchStartDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    pinchStartZoom = zoom;
+  } else if(activePointers.size === 1){
+    // Обычное перетаскивание
+    dragging = true;
+    dragMoved = false;
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    dragBaseCamX = camX; dragBaseCamY = camY;
+    canvas.classList.add('dragging');
+  }
+  try { canvas.setPointerCapture(e.pointerId); } catch(_){}
+});
+
+canvas.addEventListener('pointermove', e => {
+  if(activePointers.has(e.pointerId)){
+    activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  }
+  // Пинч-зум
+  if(activePointers.size === 2){
+    const pts = [...activePointers.values()];
+    const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    if(pinchStartDist > 0){
+      const newZoom = pinchStartZoom * (d / pinchStartDist);
+      setZoom(newZoom);
+    }
+    return;
+  }
+  // Панорамирование
+  if(!dragging) return;
+  const dx = e.clientX - dragStartX;
+  const dy = e.clientY - dragStartY;
+  if(!dragMoved && Math.hypot(dx, dy) > 8) dragMoved = true;
+  if(dragMoved){
+    camX = dragBaseCamX + dx;
+    camY = dragBaseCamY + dy;
+    clampCamera();
+  }
+});
+
+function pointerUpHandler(e){
+  activePointers.delete(e.pointerId);
+  if(activePointers.size < 2) pinchStartDist = 0;
+
+  if(activePointers.size === 0){
+    if(dragging){
+      const wasMoved = dragMoved;
+      dragging = false; dragMoved = false;
+      canvas.classList.remove('dragging');
+      try { canvas.releasePointerCapture(e.pointerId); } catch(_){}
+      if(!wasMoved){
+        const wld = screenToWorld(e.clientX, e.clientY);
+        if(truck.hitTest(wld.x, wld.y)){ openTruckModal(); return; }
+        const cell = screenToCell(e.clientX, e.clientY);
+        if(cell) onCellClick(cell.x, cell.y);
+      }
+    }
+  }
+}
+canvas.addEventListener('pointerup', pointerUpHandler);
+canvas.addEventListener('pointercancel', e => {
+  activePointers.delete(e.pointerId);
+  if(activePointers.size < 2) pinchStartDist = 0;
+  if(activePointers.size === 0){
+    dragging = false; dragMoved = false;
+    canvas.classList.remove('dragging');
+  }
+});
+canvas.addEventListener('dblclick', () => { camX = 0; camY = 0; clampCamera(); });
+
+/* Зум колесом мыши (в т.ч. Ctrl+wheel на тачпадах) */
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const k = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+  setZoom(zoom * k);
+}, {passive: false});
+
+/* Кнопки зума */
+$('#zoomIn').onclick = () => setZoom(zoom * 1.25);
+$('#zoomOut').onclick = () => setZoom(zoom / 1.25);
+
+/* ------------------------------- 12. UI ----------------------------------- */
+function toast(msg, color){
+  const box = $('#toast');
+  const d = document.createElement('div');
+  d.className = 'toast';
+  d.textContent = msg;
+  if(color){ d.style.borderColor = color; d.style.color = color; }
+  box.appendChild(d);
+  setTimeout(() => {
+    d.style.transition = 'opacity .3s, transform .3s';
+    d.style.opacity = '0';
+    d.style.transform = 'translateY(-8px)';
+    setTimeout(() => d.remove(), 320);
+  }, 1500);
+}
+function updateHUD(){
+  $('#moneyVal').textContent = fmt(state.money);
+  $('#cellsVal').textContent = unlockedCount();
+  const lvl = getLevel();
+  $('#lvlVal').textContent = lvl;
+  const p = xpProgress();
+  $('#lvlBar').style.width = (p.ratio * 100).toFixed(1) + '%';
+
+  const tr = tasksReadyCount();
+  const badge = $('#taskBadge');
+  if(tr > 0){ badge.style.display = 'block'; badge.textContent = tr; }
+  else badge.style.display = 'none';
+  const canDaily = state.lastDaily !== todayStr();
+  $('#dailyBadge').style.display = canDaily ? 'block' : 'none';
+
+  const pc = $('#prestigeChip');
+  if(state.prestige > 0){ pc.style.display = 'flex'; $('#prestigeVal').textContent = state.prestige; }
+  else pc.style.display = 'none';
+
+  const bonusChip = $('#bonusChip');
+  if(hasIncomeBonus()){
+    const left = Math.ceil((state.bonusUntil - Date.now()) / 1000);
+    bonusChip.style.display = 'flex';
+    $('#bonusTime').textContent = 'x2 ' + left + (state.lang === 'en' ? 's' : 'с');
+  } else bonusChip.style.display = 'none';
+
+  const dot = $('#timeRewardDot');
+  if(hasClaimableTimeReward()) dot.style.display = 'block';
+  else dot.style.display = 'none';
+}
+function updatePlaceBar(){
+  const bar = $('#placeBar');
+  if(!placeMode){ bar.style.display = 'none'; bar.innerHTML = ''; return; }
+  bar.style.display = 'flex';
+  let label = '';
+  if(placeMode.kind === 'furniture') label = fname(placeMode.type);
+  if(placeMode.kind === 'stock'){
+    const p = PROD_BY_ID[placeMode.pid];
+    label = pname(p) + ' \u00D7' + (state.warehouse[placeMode.pid] || 0);
+  }
+  bar.innerHTML = `<span>${label}</span>`;
+  const btn = document.createElement('button');
+  btn.className = 'btn ghost sm';
+  btn.textContent = t('cancel');
+  btn.onclick = () => { placeMode = null; updatePlaceBar(); };
+  bar.appendChild(btn);
+}
+function openModal(titleText, builder){
+  const root = $('#modalRoot');
+  root.style.display = 'block';
+  const wrap = document.createElement('div');
+  wrap.className = 'modal';
+  const box = document.createElement('div');
+  box.className = 'modal-box';
+  const head = document.createElement('div');
+  head.className = 'modal-head';
+  const h3 = document.createElement('h3');
+  h3.textContent = titleText;
+  const close = document.createElement('button');
+  close.className = 'close-btn';
+  close.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>';
+  close.onclick = closeModal;
+  head.appendChild(h3); head.appendChild(close);
+  const body = document.createElement('div');
+  body.className = 'modal-body';
+  wrap.appendChild(box);
+  box.appendChild(head); box.appendChild(body);
+  root.appendChild(wrap);
+  wrap.addEventListener('pointerdown', e => { if(e.target === wrap) closeModal(); });
+  builder(body);
+  return body;
+}
+function closeModal(){
+  $('#modalRoot').innerHTML = '';
+  $('#modalRoot').style.display = 'none';
+}
+let shopCurCat = 'all';
+function openShop(){
+  openModal(t('shop'), el => {
+    let curTab = 'items';
+    const tabs = document.createElement('div');
+    tabs.className = 'tabs';
+    const tabsData = [
+      {id:'items',label:t('items')},
+      {id:'furn',label:t('furniture')},
+      {id:'decor',label:t('decor')},
+      {id:'expand',label:t('expand')}
+    ];
+    const catSel = document.createElement('div');
+    catSel.className = 'cat-sel';
+    catSel.style.cssText = 'display:flex;gap:5px;overflow-x:auto;padding:8px 2px;';
+    const content = document.createElement('div');
+    function renderContent(){
+      content.innerHTML = '';
+      if(curTab === 'items') renderItems();
+      else if(curTab === 'furn') renderFurniture();
+      else if(curTab === 'decor') renderDecor();
+      else renderExpand();
+    }
+    function renderItems(){
+      content.innerHTML = '';
+      catSel.style.display = 'flex';
+      catSel.innerHTML = '';
+      const cats = ['all'].concat(Object.keys(CATS));
+      cats.forEach(ck => {
+        const chip = document.createElement('div');
+        chip.className = 'tab' + (shopCurCat === ck ? ' active' : '');
+        chip.style.padding = '6px 11px'; chip.style.fontSize = '12px';
+        chip.textContent = ck === 'all' ? (state.lang === 'en' ? 'All' : 'Все') : catName(ck);
+        chip.onclick = () => { shopCurCat = ck; renderItems(); };
+        catSel.appendChild(chip);
+      });
+      const lvl = getLevel();
+      const list = PRODUCTS.filter(p => shopCurCat === 'all' || p.cat === shopCurCat);
+      if(shopCurCat === 'all'){
+        const byCat = {};
+        Object.keys(CATS).forEach(ck => byCat[ck] = []);
+        list.forEach(p => { if(byCat[p.cat]) byCat[p.cat].push(p); });
+        Object.keys(CATS).forEach(ck => {
+          const arr = byCat[ck];
+          if(!arr.length) return;
+          const hdr = document.createElement('div');
+          hdr.className = 'cat-header'; hdr.textContent = catName(ck);
+          content.appendChild(hdr);
+          const grid = document.createElement('div');
+          grid.className = 'grid2';
+          arr.forEach(p => grid.appendChild(makeProductRow(p, lvl)));
+          content.appendChild(grid);
+        });
+      } else {
+        const grid = document.createElement('div');
+        grid.className = 'grid2';
+        list.forEach(p => grid.appendChild(makeProductRow(p, lvl)));
+        content.appendChild(grid);
+      }
+    }
+    function makeProductRow(p, lvl){
+      const unlocked = lvl >= productLevel(p);
+      const row = document.createElement('div');
+      row.className = 'row' + (unlocked ? '' : ' locked');
+      row.style.margin = '0'; row.style.padding = '7px';
+      const ic = document.createElement('div');
+      ic.className = 'ic';
+      ic.style.width = '32px'; ic.style.height = '32px';
+      const im = document.createElement('img');
+      im.src = svgURI(productSVG(p.shape, p.color));
+      ic.appendChild(im);
+      if(!unlocked){
+        const lock = document.createElement('div');
+        lock.className = 'lock'; lock.textContent = '\uD83D\uDD12';
+        ic.appendChild(lock);
+      }
+      const nm = document.createElement('div');
+      nm.className = 'nm';
+      const sub = unlocked ? catName(p.cat) : (t('requires') + ' ' + t('level') + ' ' + productLevel(p));
+      nm.innerHTML = `<b style="font-size:12px">${pname(p)}</b><span>${sub}</span>`;
+      const pr = document.createElement('div');
+      pr.className = 'pr'; pr.style.fontSize = '12px';
+      pr.textContent = unlocked ? fmt(p.cost) : '\u2014';
+      row.appendChild(ic); row.appendChild(nm); row.appendChild(pr);
+      if(unlocked){
+        const b = document.createElement('button');
+        b.className = 'btn sm'; b.textContent = '+';
+        b.onclick = () => buyProduct(p.id, 1);
+        const b10 = document.createElement('button');
+        b10.className = 'btn sm ghost'; b10.textContent = '\u00D710';
+        b10.onclick = () => buyProduct(p.id, 10);
+        row.appendChild(b); row.appendChild(b10);
+      } else {
+        const b = document.createElement('button');
+        b.className = 'btn sm locked';
+        b.textContent = t('level') + ' ' + productLevel(p);
+        b.disabled = true;
+        row.appendChild(b);
+      }
+      return row;
+    }
+    function buyProduct(pid, count){
+      const p = PROD_BY_ID[pid];
+      if(getLevel() < productLevel(p)){ toast(t('locked'), '#e0575b'); return; }
+      let bought = 0;
+      for(let i = 0; i < count; i++){
+        if(state.money < p.cost) break;
+        state.money -= p.cost;
+        state.warehouse[pid] = (state.warehouse[pid] || 0) + 1;
+        bought++;
+      }
+      if(bought === 0){ toast(t('noMoney')); return; }
+      state.ds.buy += bought;
+      updateHUD(); scheduleSave();
+      toast(t('bought') + ': ' + pname(p) + ' \u00D7' + bought, '#7fd07f');
+      if(tutorialStep === 2){ tutorialStep = 3; updateTutorialBlock(); showTutorialHint(); }
+    }
+    function renderFurniture(){
+      content.innerHTML = ''; catSel.style.display = 'none';
+      Object.keys(FURNITURE).forEach(k => {
+        const f = FURNITURE[k];
+        const row = document.createElement('div');
+        row.className = 'row';
+        const ic = document.createElement('div');
+        ic.className = 'ic';
+        const im = document.createElement('img');
+        im.src = svgURI(furnitureSVG(k));
+        ic.appendChild(im);
+        const nm = document.createElement('div');
+        nm.className = 'nm';
+        const cnt = countFurniture(k);
+        const cap = f.cap + (f.cap > 0 ? extraCapacity() : 0);
+        nm.innerHTML = `<b>${fname(k)}</b><span>${t('onMap')}: ${cnt}${f.cap ? ' \u00B7 ' + cap + ' ' + t('slots') : ''}</span>`;
+        const pr = document.createElement('div');
+        pr.className = 'pr'; pr.textContent = fmt(f.cost);
+        const b = document.createElement('button');
+        b.className = 'btn'; b.textContent = t('buy');
+        b.onclick = () => {
+          if(state.money < f.cost){ toast(t('noMoney')); return; }
+          state.money -= f.cost;
+          updateHUD(); scheduleSave();
+          placeMode = {kind: 'furniture', type: k};
+          updatePlaceBar();
+          closeModal();
+          toast(t('tapEmptyCell'));
+        };
+        row.appendChild(ic); row.appendChild(nm); row.appendChild(pr); row.appendChild(b);
+        content.appendChild(row);
+      });
+    }
+    function renderDecor(){
+      content.innerHTML = ''; catSel.style.display = 'none';
+      const tw = document.createElement('div');
+      tw.className = 'sec-title'; tw.textContent = t('walls');
+      content.appendChild(tw);
+      WALLS.forEach((w, i) => {
+        const owned = state.owned.wall.indexOf(i) >= 0;
+        const active = state.decor.wall === i;
+        const row = document.createElement('div');
+        row.className = 'row';
+        const ic = document.createElement('div');
+        ic.className = 'ic';
+        ic.style.background = w.floor;
+        ic.innerHTML = `<svg viewBox="0 0 32 32" width="30" height="30"><rect x="2" y="2" width="28" height="28" rx="5" fill="${w.floor}" stroke="${w.line}" stroke-width="2"/></svg>`;
+        const nm = document.createElement('div');
+        nm.className = 'nm';
+        nm.innerHTML = `<b>${state.lang === 'en' ? w.en : w.ru}</b><span>${owned ? t('bought') : fmt(w.cost) + ' \u20BF'}</span>`;
+        const b = document.createElement('button');
+        b.className = 'btn' + (active ? ' ghost' : '');
+        b.textContent = active ? '\u2713' : (owned ? t('apply2') : t('buy'));
+        b.disabled = active;
+        b.onclick = () => {
+          if(owned){ state.decor.wall = i; }
+          else {
+            if(state.money < w.cost){ toast(t('noMoney')); return; }
+            state.money -= w.cost;
+            state.owned.wall.push(i);
+            state.decor.wall = i;
+          }
+          updateHUD(); scheduleSave();
+          closeModal(); openShop();
+        };
+        row.appendChild(ic); row.appendChild(nm); row.appendChild(b);
+        content.appendChild(row);
+      });
+      const tn = document.createElement('div');
+      tn.className = 'sec-title'; tn.textContent = t('windows');
+      content.appendChild(tn);
+      WINDOWS.forEach((w, i) => {
+        const owned = state.owned.window.indexOf(i) >= 0;
+        const active = state.decor.window === i;
+        const row = document.createElement('div');
+        row.className = 'row';
+        const ic = document.createElement('div');
+        ic.className = 'ic';
+        ic.innerHTML = `<svg viewBox="0 0 32 32" width="30" height="30"><rect x="4" y="8" width="24" height="16" rx="3" fill="#8fd3ff" stroke="#5b8fb0" stroke-width="2"/></svg>`;
+        const nm = document.createElement('div');
+        nm.className = 'nm';
+        nm.innerHTML = `<b>${state.lang === 'en' ? w.en : w.ru}</b><span>${owned ? t('bought') : fmt(w.cost) + ' \u20BF'}</span>`;
+        const b = document.createElement('button');
+        b.className = 'btn' + (active ? ' ghost' : '');
+        b.textContent = active ? '\u2713' : (owned ? t('apply2') : t('buy'));
+        b.disabled = active;
+        b.onclick = () => {
+          if(owned){ state.decor.window = i; }
+          else {
+            if(state.money < w.cost){ toast(t('noMoney')); return; }
+            state.money -= w.cost;
+            state.owned.window.push(i);
+            state.decor.window = i;
+          }
+          updateHUD(); scheduleSave();
+          closeModal(); openShop();
+        };
+        row.appendChild(ic); row.appendChild(nm); row.appendChild(b);
+        content.appendChild(row);
+      });
+    }
+    function renderExpand(){
+      content.innerHTML = ''; catSel.style.display = 'none';
+      const lvl = getLevel();
+      const maxCells = maxCellsForLevel(lvl);
+      const cur = unlockedCount();
+      const info = document.createElement('div');
+      info.style.cssText = 'padding:14px;text-align:center;';
+      info.innerHTML = `
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px">${t('expand')}</div>
+        <div style="color:#8798ad;font-size:13px;margin-bottom:10px">
+          ${state.lang === 'en' ? 'Unlocked' : 'Открыто'}: ${cur} / ${maxCells}
+          <span style="opacity:.6">(${t('level')} ${lvl})</span>
+        </div>
+        <div style="font-size:24px;font-weight:800;color:#ffd257;margin-bottom:8px">${fmt(expandPrice())} \u20BF</div>
+        <div style="color:#8798ad;font-size:12.5px">${t('expandHint')}</div>
+        <div class="progressbar" style="margin-top:14px"><i style="width:${(cur / maxCells * 100).toFixed(1)}%"></i></div>`;
+      content.appendChild(info);
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.style.cssText = 'width:100%;padding:13px;font-size:14px;margin-top:10px';
+      btn.textContent = state.lang === 'en' ? 'Close and pick a cell' : 'Закрыть и выбрать клетку';
+      btn.onclick = closeModal;
+      content.appendChild(btn);
+    }
+    tabsData.forEach(td => {
+      const el = document.createElement('div');
+      el.className = 'tab' + (curTab === td.id ? ' active' : '');
+      el.textContent = td.label;
+      el.onclick = () => {
+        curTab = td.id;
+        [...tabs.children].forEach(ch => ch.classList.remove('active'));
+        el.classList.add('active');
+        renderContent();
+      };
+      tabs.appendChild(el);
+    });
+    el.appendChild(tabs);
+    el.appendChild(catSel);
+    el.appendChild(content);
+    renderContent();
+  });
+}
+function countFurniture(k){
+  let n = 0;
+  for(let y = 0; y < GH; y++) for(let x = 0; x < GW; x++){
+    const c = state.grid[y][x];
+    if(c.u && c.t === k) n++;
+  }
+  return n;
+}
+function openWarehouse(){
+  openModal(t('warehouse'), el => {
+    const total = warehouseTotal();
+    if(total === 0){ el.innerHTML = `<div class="empty">${t('stockEmpty')}</div>`; return; }
+    const top = document.createElement('div');
+    top.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:10px';
+    top.innerHTML = `<div class="chip">${t('total')}: ${total}</div>`;
+    const auto = document.createElement('button');
+    auto.className = 'btn g';
+    auto.style.marginLeft = 'auto';
+    auto.textContent = t('autoStock');
+    auto.onclick = () => { autoStock(); closeModal(); openWarehouse(); };
+    top.appendChild(auto);
+    el.appendChild(top);
+    const ids = Object.keys(state.warehouse).filter(k => state.warehouse[k] > 0)
+      .sort((a, b) => PROD_BY_ID[b].cost - PROD_BY_ID[a].cost);
+    ids.forEach(idStr => {
+      const pid = Number(idStr);
+      const p = PROD_BY_ID[pid];
+      if(!p) return;
+      const row = document.createElement('div');
+      row.className = 'row';
+      const ic = document.createElement('div');
+      ic.className = 'ic';
+      const im = document.createElement('img');
+      im.src = svgURI(productSVG(p.shape, p.color));
+      ic.appendChild(im);
+      const nm = document.createElement('div');
+      nm.className = 'nm';
+      nm.innerHTML = `<b>${pname(p)}</b><span>${catName(p.cat)} \u00B7 ${state.warehouse[pid]} \u0448\u0442</span>`;
+      const b = document.createElement('button');
+      b.className = 'btn'; b.textContent = t('place');
+      b.onclick = () => {
+        placeMode = {kind: 'stock', pid};
+        updatePlaceBar(); closeModal();
+        toast(t('tapShelf'));
+      };
+      row.appendChild(ic); row.appendChild(nm); row.appendChild(b);
+      el.appendChild(row);
+    });
+  });
+}
+function autoStock(){
+  const shelves = shelfCells();
+  let moved = 0;
+  const ids = Object.keys(state.warehouse).map(Number).sort((a, b) => PROD_BY_ID[b].cost - PROD_BY_ID[a].cost);
+  for(const pid of ids){
+    if(!state.warehouse[pid]) continue;
+    for(const s of shelves){
+      if(!state.warehouse[pid]) break;
+      if(!canAccept(s.c, pid)) continue;
+      const added = addToShelf(s.c, pid, state.warehouse[pid]);
+      if(added > 0){
+        state.warehouse[pid] -= added;
+        moved += added;
+        if(state.warehouse[pid] <= 0){ delete state.warehouse[pid]; }
+      }
+    }
+  }
+    if(moved > 0){
+    state.ds.stock += moved;
+    toast(t('stocked') + ': ' + moved, '#7fd07f');
+    updateHUD(); scheduleSave();
+    checkTutorialStock();   // ← добавлено: обучение тоже продвинется
+  } else toast(t('noSlots'));
+}
+function openShelfInfo(gx, gy){
+  const c = cellAt(gx, gy);
+  if(!c || !c.t) return;
+  openModal(fname(c.t), el => {
+    const info = document.createElement('div');
+    info.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px';
+    info.innerHTML = `<div class="chip">${t('total')}: ${shelfQty(c)} / ${shelfCapacity(c)}</div>`;
+    const bar = document.createElement('div');
+    bar.className = 'progressbar'; bar.style.flex = '1';
+    const ratio = shelfCapacity(c) > 0 ? shelfQty(c) / shelfCapacity(c) : 0;
+    bar.innerHTML = `<i style="width:${(ratio*100).toFixed(0)}%"></i>`;
+    info.appendChild(bar);
+    el.appendChild(info);
+    if(c.stock.length){
+      const list = document.createElement('div');
+      list.style.marginTop = '4px';
+      c.stock.forEach(s => {
+        const p = PROD_BY_ID[s.id];
+        if(!p) return;
+        const row = document.createElement('div');
+        row.className = 'row';
+        const ic = document.createElement('div');
+        ic.className = 'ic';
+        const im = document.createElement('img');
+        im.src = svgURI(productSVG(p.shape, p.color));
+        ic.appendChild(im);
+        const nm = document.createElement('div');
+        nm.className = 'nm';
+        nm.innerHTML = `<b>${pname(p)}</b><span>${catName(p.cat)} \u00B7 ${t('sellAt')} ${p.sell} \u20BF</span>`;
+        const qty = document.createElement('div');
+        qty.className = 'pr'; qty.textContent = '\u00D7' + s.n;
+        const b = document.createElement('button');
+        b.className = 'btn ghost sm'; b.textContent = t('take');
+        b.onclick = () => { takeFromShelf(c, s.id, s.n); updateHUD(); scheduleSave(); closeModal(); openShelfInfo(gx, gy); };
+        row.appendChild(ic); row.appendChild(nm); row.appendChild(qty); row.appendChild(b);
+        list.appendChild(row);
+      });
+      el.appendChild(list);
+    } else {
+      const e = document.createElement('div');
+      e.className = 'empty'; e.textContent = t('emptyShelf');
+      el.appendChild(e);
+    }
+    const del = document.createElement('button');
+    del.className = 'btn r';
+    del.style.cssText = 'width:100%;padding:12px;margin-top:12px';
+    del.textContent = t('remove') + ' (+' + Math.floor(FURNITURE[c.t].cost * 0.5) + ' \u20BF)';
+    del.onclick = () => {
+      state.money += Math.floor(FURNITURE[c.t].cost * 0.5);
+      for(const s of c.stock){ state.warehouse[s.id] = (state.warehouse[s.id] || 0) + s.n; }
+      c.stock = []; c.t = null;
+      updateHUD(); scheduleSave();
+      closeModal();
+      toast(t('remove'), '#e0575b');
+    };
+    el.appendChild(del);
+  });
+}
+function openSettings(){
+  openModal(t('settings'), el => {
+    const tabs = document.createElement('div');
+    tabs.className = 'tabs';
+    tabs.style.marginBottom = '8px';
+    const tabList = [
+      {id:'main',label:t('settingsTabMain')},
+      {id:'upgrades',label:t('settingsTabUpgrades')},
+      {id:'prestige',label:t('settingsTabPrestige')}
+    ];
+    let curTab = 'main';
+    const content = document.createElement('div');
+    function renderContent(){
+      content.innerHTML = '';
+      if(curTab === 'main') renderMain();
+      else if(curTab === 'upgrades') renderUpgradesTab();
+      else renderPrestigeTab();
+    }
+    function renderMain(){
+      const r1 = document.createElement('div');
+      r1.className = 'row';
+      r1.innerHTML = `<div class="nm"><b>${t('music')}</b><span>${state.lang === 'en' ? 'Background music' : 'Фоновая музыка'}</span></div>`;
+      const sw = document.createElement('div');
+      sw.className = 'switch' + (state.music ? ' on' : '');
+      sw.innerHTML = '<i></i>';
+      sw.onclick = () => {
+        state.music = !state.music;
+        sw.classList.toggle('on', state.music);
+        Music.setEnabled(state.music);
+        scheduleSave();
+      };
+      r1.appendChild(sw);
+      content.appendChild(r1);
+
+      const r2 = document.createElement('div');
+      r2.className = 'row';
+      r2.innerHTML = `<div class="nm"><b>${t('language')}</b><span>${state.lang === 'ru' ? 'Русский' : 'English'}</span></div>`;
+      const lg = document.createElement('div');
+      lg.style.display = 'flex'; lg.style.gap = '6px';
+      ['ru','en'].forEach(code => {
+        const b = document.createElement('button');
+        b.className = 'btn sm' + (state.lang === code ? '' : ' ghost');
+        b.textContent = code.toUpperCase();
+        b.onclick = () => {
+          state.lang = code;
+          scheduleSave(); applyLang();
+          closeModal(); openSettings();
+        };
+        lg.appendChild(b);
+      });
+      r2.appendChild(lg);
+      content.appendChild(r2);
+
+      const tt = document.createElement('div');
+      tt.className = 'sec-title'; tt.textContent = t('promo');
+      content.appendChild(tt);
+      const box = document.createElement('div');
+      box.style.cssText = 'display:flex;gap:7px';
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.placeholder = '...'; inp.maxLength = 20;
+      const ab = document.createElement('button');
+      ab.className = 'btn'; ab.textContent = t('apply');
+      ab.onclick = async () => {
+        const code = inp.value.trim().toLowerCase();
+        if(code === 'clear12'){
+          await wipeSave(); closeModal();
+          toast(t('promoOk'), '#7fd07f');
+          setTimeout(() => location.reload(), 900);
+        } else if(code === 'admin17'){
+          state.money += 1000000;
+          state.xp += 1000000;
+          updateHUD(); scheduleSave();
+          inp.value = '';
+          toast(t('promoOk') + ' +1 000 000 \u20BF', '#ffd257');
+        } else toast(t('promoBad'), '#e0575b');
+      };
+      box.appendChild(inp); box.appendChild(ab);
+      content.appendChild(box);
+      const rb = document.createElement('button');
+      rb.className = 'btn r';
+      rb.style.cssText = 'width:100%;padding:11px;margin-top:16px';
+      rb.textContent = state.lang === 'en' ? 'Reset progress' : 'Сбросить прогресс';
+      rb.onclick = () => renderConfirm();
+      content.appendChild(rb);
+    }
+    function renderConfirm(){
+      content.innerHTML = '';
+      const icon = document.createElement('div');
+      icon.style.cssText = 'text-align:center;font-size:52px;padding-bottom:6px';
+      icon.textContent = '⚠️';
+      content.appendChild(icon);
+      const q = document.createElement('div');
+      q.style.cssText = 'text-align:center;padding:14px 10px;font-size:15px;font-weight:600;line-height:1.5';
+      q.textContent = t('confirmReset');
+      content.appendChild(q);
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+      const yes = document.createElement('button');
+      yes.className = 'btn r';
+      yes.style.cssText = 'flex:1;padding:13px;font-size:14px';
+      yes.textContent = t('yesReset');
+      yes.onclick = async () => { await wipeSave(); closeModal(); toast(t('progressReset'), '#e0575b'); updateHUD(); };
+      const no = document.createElement('button');
+      no.className = 'btn ghost';
+      no.style.cssText = 'flex:1;padding:13px;font-size:14px';
+      no.textContent = t('cancel');
+      no.onclick = () => renderContent();
+      row.appendChild(yes); row.appendChild(no);
+      content.appendChild(row);
+    }
+    function renderUpgradesTab(){
+      const top = document.createElement('div');
+      top.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px';
+      top.innerHTML = `<div class="chip">\uD83D\uDCB0 ${fmt(state.money)} \u20BF</div>`;
+      content.appendChild(top);
+      Object.keys(UPGRADES).forEach(key => {
+        const u = UPGRADES[key];
+        const lvl = upgradeLevel(key);
+        const maxed = lvl >= u.max;
+        const cost = maxed ? 0 : u.costs[lvl];
+        const canBuy = !maxed && state.money >= cost;
+        const row = document.createElement('div');
+        row.className = 'row';
+        const ic = document.createElement('div');
+        ic.className = 'ic';
+        ic.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#ffd257" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z"/></svg>`;
+        const nm = document.createElement('div');
+        nm.className = 'nm';
+        nm.innerHTML = `<b>${uname(key)} <span style="color:#8798ad;font-size:11px">${lvl}/${u.max}</span></b><span>${udesc(key)}</span>`;
+        const pr = document.createElement('div');
+        pr.className = 'pr'; pr.textContent = maxed ? t('maxed') : fmt(cost);
+        const b = document.createElement('button');
+        b.className = 'btn' + (canBuy ? '' : ' ghost');
+        b.textContent = maxed ? '\u2713' : t('buyUpgrade');
+        b.disabled = maxed || !canBuy;
+        b.onclick = () => {
+          if(maxed || state.money < cost) return;
+          state.money -= cost;
+          state.upgrades[key] = lvl + 1;
+          updateHUD(); scheduleSave();
+          toast(uname(key) + ' \u2192 ' + (lvl + 1), '#7fd07f');
+          renderContent();
+        };
+        row.appendChild(ic); row.appendChild(nm); row.appendChild(pr); row.appendChild(b);
+        content.appendChild(row);
+      });
+    }
+    function renderPrestigeTab(){
+      const lvl = getLevel();
+      const bonusPct = Math.round(PRESTIGE_BONUS * state.prestige * 100);
+      const info = document.createElement('div');
+      info.style.cssText = 'text-align:center;padding:8px';
+      info.innerHTML = `
+        <div style="font-size:60px;line-height:1">⭐</div>
+        <div style="font-size:16px;font-weight:800;color:#ffd257;margin-top:6px">+${bonusPct}%</div>
+        <div style="font-size:12px;color:#8798ad;margin-top:4px">${fmtStr(t('prestigeBonusTotal'), {n: bonusPct})}</div>
+        <div style="margin-top:10px" class="chip">${fmtStr(t('prestigeTotal'), {n: state.prestige})}</div>
+        <div style="margin-top:8px" class="chip">${t('level')} ${lvl} / ${PRESTIGE_LEVEL}</div>`;
+      content.appendChild(info);
+      if(!canPrestige()){
+        const w = document.createElement('div');
+        w.style.cssText = 'margin-top:14px;color:#8798ad;font-size:13px;text-align:center;padding:10px';
+        w.textContent = fmtStr(t('prestigeRequires'), {n: PRESTIGE_LEVEL});
+        content.appendChild(w);
+      } else {
+        const b = document.createElement('button');
+        b.className = 'btn gold';
+        b.style.cssText = 'width:100%;padding:14px;font-size:15px;margin-top:14px';
+        b.textContent = t('prestigeBtn') + ' (+5%)';
+        b.onclick = () => {
+          content.innerHTML = '';
+          const q = document.createElement('div');
+          q.style.cssText = 'text-align:center;padding:20px 10px;font-size:14.5px;font-weight:600;line-height:1.5';
+          q.textContent = t('prestigeConfirm');
+          content.appendChild(q);
+          const row = document.createElement('div');
+          row.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+          const yes = document.createElement('button');
+          yes.className = 'btn gold';
+          yes.style.cssText = 'flex:1;padding:13px;font-size:14px';
+          yes.textContent = t('prestigeYes');
+          yes.onclick = () => { doPrestige(); closeModal(); };
+          const no = document.createElement('button');
+          no.className = 'btn ghost';
+          no.style.cssText = 'flex:1;padding:13px;font-size:14px';
+          no.textContent = t('cancel');
+          no.onclick = () => renderContent();
+          row.appendChild(yes); row.appendChild(no);
+          content.appendChild(row);
+        };
+        content.appendChild(b);
+      }
+    }
+    tabList.forEach(td => {
+      const el = document.createElement('div');
+      el.className = 'tab' + (curTab === td.id ? ' active' : '');
+      el.textContent = td.label;
+      el.onclick = () => {
+        curTab = td.id;
+        [...tabs.children].forEach(ch => ch.classList.remove('active'));
+        el.classList.add('active');
+        renderContent();
+      };
+      tabs.appendChild(el);
+    });
+    el.appendChild(tabs);
+    el.appendChild(content);
+    renderContent();
+  });
+}
+function openTasks(){
+  checkDailyReset();
+  openModal(t('tasks'), el => {
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px';
+    head.innerHTML = `<div class="chip">${todayStr()}</div>`;
+    el.appendChild(head);
+    state.tasks.forEach(tk => {
+      const prog = taskProgress(tk);
+      const done = prog >= tk.target;
+      const row = document.createElement('div');
+      row.className = 'row';
+      const nm = document.createElement('div');
+      nm.className = 'nm'; nm.style.flex = '1';
+      nm.innerHTML = `<b>${taskText(tk)}</b>
+        <span>${prog} / ${tk.target} \u00B7 ${t('reward')}: ${tk.reward} \u20BF</span>
+        <div class="progressbar"><i style="width:${(prog / tk.target * 100).toFixed(0)}%"></i></div>`;
+      const b = document.createElement('button');
+      b.className = 'btn' + (done && !tk.claimed ? '' : ' ghost');
+      b.textContent = tk.claimed ? t('claimed') : t('claim');
+      b.disabled = !done || tk.claimed;
+      b.onclick = () => {
+        if(tk.claimed || !done) return;
+        tk.claimed = true;
+        state.money += tk.reward;
+        addXP(Math.max(1, Math.round(tk.reward * 0.5 * xpMul())));
+        updateHUD(); scheduleSave();
+        toast('+' + fmt(tk.reward) + ' \u20BF', '#ffd257');
+        closeModal(); openTasks();
+      };
+      row.appendChild(nm); row.appendChild(b);
+      el.appendChild(row);
+    });
+  });
+}
+function openDaily(){
+  openModal(t('daily'), el => {
+    const today = todayStr();
+    const canTake = state.lastDaily !== today;
+    const amounts = [100, 200, 350, 550, 800, 1200, 2000];
+    const dayIdx = state.streak % 7;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:12px';
+    amounts.forEach((a, i) => {
+      const d = document.createElement('div');
+      d.style.cssText = `padding:12px 4px;border-radius:12px;text-align:center;font-size:12px;font-weight:700;
+        background:${i === dayIdx ? '#2d6cdf' : (i < dayIdx ? '#1f3a2a' : '#1a212c')};
+        border:1px solid ${i === dayIdx ? '#4a89ff' : '#232d3b'};`;
+      d.innerHTML = `<div style="font-size:10px;opacity:.7;margin-bottom:4px">${state.lang === 'en' ? 'Day' : 'День'} ${i + 1}</div>
+        <div style="color:#ffd257">${fmt(a)}</div>`;
+      wrap.appendChild(d);
+    });
+    el.appendChild(wrap);
+    const st = document.createElement('div');
+    st.className = 'chip';
+    st.textContent = t('streak') + ': ' + state.streak;
+    el.appendChild(st);
+    const btn = document.createElement('button');
+    btn.className = 'btn' + (canTake ? '' : ' ghost');
+    btn.style.cssText = 'width:100%;padding:14px;font-size:15px;margin-top:14px';
+    btn.textContent = canTake ? (t('take') + ' ' + fmt(amounts[dayIdx]) + ' \u20BF') : t('dailyTaken');
+    btn.disabled = !canTake;
+    btn.onclick = () => {
+      if(!canTake) return;
+      state.money += amounts[dayIdx];
+      addXP(Math.max(1, Math.round(amounts[dayIdx] * 0.5 * xpMul())));
+      state.lastDaily = today; state.streak++;
+      updateHUD(); scheduleSave();
+      toast('+' + fmt(amounts[dayIdx]) + ' \u20BF', '#ffd257');
+      closeModal();
+    };
+    el.appendChild(btn);
+  });
+}
+function showAdOverlay(text){
+  $('#overlayText').textContent = text || t('adLoading');
+  $('#overlay').style.display = 'flex';
+  Music.stop();
+}
+function hideAdOverlay(){
+  $('#overlay').style.display = 'none';
+  if(state.music) Music.start();
+}
+let tutorialStep = 0;
+function isTutorialBlocking(){ return tutorialStep > 0 && !state.tutorialDone; }
+function updateTutorialBlock(){
+  document.body.classList.toggle('tutorial-on', isTutorialBlocking());
+  document.querySelectorAll('.botbtn, .iconbtn').forEach(b => b.classList.remove('tutorial-active'));
+  if(!isTutorialBlocking()) return;
+  if(tutorialStep === 2){ document.getElementById('btnShop').classList.add('tutorial-active'); }
+  else if(tutorialStep === 3){ document.getElementById('btnStock').classList.add('tutorial-active'); }
+}
+  function checkTutorialStock(){
+  // Если игрок на 3-м шаге обучения и уже что-то разложил — идём дальше
+  if(tutorialStep === 3 && state.ds.stock > 0){
+    tutorialStep = 4;
+    updateTutorialBlock();
+    showTutorialHint();
+  }
+}
+function showTutorialHint(){
+  const hint = $('#hint');
+  if(!isTutorialBlocking()){ hint.style.display = 'none'; return; }
+  const msgs = {1:t('tutorial1'),2:t('tutorial2'),3:t('tutorial3'),4:t('tutorial4'),5:t('tutorial5')};
+  const msg = msgs[tutorialStep];
+  if(!msg){ hint.style.display = 'none'; return; }
+  hint.style.display = 'block';
+  hint.innerHTML = `<div>${msg}</div>`;
+  if(tutorialStep === 1){
+    const row = document.createElement('div');
+    row.className = 'hintrow';
+    const b = document.createElement('button');
+    b.className = 'btn'; b.textContent = t('next');
+    b.onclick = () => { tutorialStep = 2; updateTutorialBlock(); showTutorialHint(); };
+    row.appendChild(b); hint.appendChild(row);
+  } else if(tutorialStep === 4){
+    const row = document.createElement('div');
+    row.className = 'hintrow';
+    const b = document.createElement('button');
+    b.className = 'btn'; b.textContent = t('finish');
+    b.onclick = () => {
+      state.tutorialDone = true; tutorialStep = 0;
+      updateTutorialBlock();
+      hint.style.display = 'none';
+      scheduleSave();
+      toast(t('tutorialComplete'), '#7fd07f');
+    };
+    row.appendChild(b); hint.appendChild(row);
+  }
+}
+function startTutorial(){
+  tutorialStep = 1;
+  state.tutorialDone = false;
+  updateTutorialBlock();
+  showTutorialHint();
+}
+function skipTutorial(){
+  tutorialStep = 0;
+  state.tutorialDone = true;
+  updateTutorialBlock();
+  $('#hint').style.display = 'none';
+  scheduleSave();
+}
+function applyLang(){
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+  updateHUD();
+}
+
+/* ------------------------------- 13. VK ----------------------------------- */
+function initVK(){
+  if(!vk) return;
+  try { vk.send('VKWebAppInit'); } catch(e){}
+  vkSend('VKWebAppGetLaunchParams').then(() => {
+    return vkSend('VKWebAppShowBannerAd', {
+      banner_type: 'bottom', layout_type: 'resize', height: 60
+    }).catch(() => vkSend('VKWebAppShowBannerAd').catch(() => {}));
+  }).catch(() => {
+    vkSend('VKWebAppShowBannerAd', {
+      banner_type: 'bottom', layout_type: 'resize', height: 60
+    }).catch(() => {});
+  });
+  try {
+    vk.subscribe(e => {
+      const type = e.detail ? e.detail.type : e.type;
+      if(type === 'VKWebAppViewHide'){ paused = true; Music.stop(); }
+      else if(type === 'VKWebAppViewRestore'){
+        paused = false;
+        if(state && state.music) Music.start();
+      }
+    });
+  } catch(err){}
+}
+window.addEventListener('blur', () => { paused = true; Music.stop(); });
+window.addEventListener('focus', () => { paused = false; if(state && state.music) Music.start(); });
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden){ paused = true; Music.stop(); }
+  else { paused = false; if(state && state.music) Music.start(); }
+});
+
+/* ------------------------------- 14. ЦИКЛ --------------------------------- */
+let paused = false;
+let lastTs = 0;
+function loop(ts){
+  requestAnimationFrame(loop);
+  if(!lastTs) lastTs = ts;
+  let dt = (ts - lastTs) / 1000;
+  lastTs = ts;
+  if(dt > 0.1) dt = 0.1;
+  if(dt < 0) dt = 0;
+  if(!paused && state){
+    updateWorld(dt);
+    state.playtime += dt;
+    checkTimeRewards();
+    if(!window._saveAcc) window._saveAcc = 0;
+    window._saveAcc += dt;
+    if(window._saveAcc > 20){ window._saveAcc = 0; scheduleSave(); }
+    if(state.tasksDate !== todayStr()){ checkDailyReset(); updateHUD(); }
+  }
+  if(state) draw();
+}
+
+/* ------------------------------ 15. СТАРТ --------------------------------- */
+async function boot(){
+  state = newState();
+  initGrid();
+  const loaded = await loadGame();
+  if(!loaded){ state = newState(); initGrid(); }
+  checkDailyReset();
+  applyLang();
+  resize();
+  if(!loaded){
+    setTimeout(() => {
+      openModal(state.lang === 'en' ? 'Welcome!' : 'Добро пожаловать!', el => {
+        const q = document.createElement('div');
+        q.style.cssText = 'text-align:center;padding:16px 8px;font-size:15px;font-weight:600';
+        q.textContent = t('tutorialQ');
+        el.appendChild(q);
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:8px';
+        const yes = document.createElement('button');
+        yes.className = 'btn';
+        yes.style.cssText = 'flex:1;padding:13px';
+        yes.textContent = t('tutorialYes');
+        yes.onclick = () => { closeModal(); startTutorial(); };
+        const no = document.createElement('button');
+        no.className = 'btn ghost';
+        no.style.cssText = 'flex:1;padding:13px';
+        no.textContent = t('tutorialSkip');
+        no.onclick = () => { closeModal(); skipTutorial(); };
+        row.appendChild(yes); row.appendChild(no);
+        el.appendChild(row);
+      });
+    }, 400);
+  }
+  updateHUD();
+  updatePlaceBar();
+  updateTutorialBlock();
+  const startMusic = () => {
+    if(state.music) Music.start();
+    document.removeEventListener('pointerdown', startMusic);
+    document.removeEventListener('keydown', startMusic);
+  };
+  document.addEventListener('pointerdown', startMusic);
+  document.addEventListener('keydown', startMusic);
+  requestAnimationFrame(loop);
+  setInterval(() => { if(state) updateHUD(); }, 1000);
+}
+
+/* ------------------------------ 16. СОБЫТИЯ ------------------------------- */
+$('#btnShop').onclick = () => { if(paused) return; if(isTutorialBlocking() && tutorialStep !== 2) return; openShop(); };
+$('#btnStock').onclick = () => { if(paused) return; if(isTutorialBlocking() && tutorialStep !== 3) return; openWarehouse(); };
+$('#btnTimeRewards').onclick = () => { if(!paused && !isTutorialBlocking()) openTimeRewards(); };
+$('#btnUpgrades').onclick = () => { if(!paused && !isTutorialBlocking()) openUpgrades(); };
+$('#btnTasks').onclick = () => { if(!paused && !isTutorialBlocking()) openTasks(); };
+$('#btnDaily').onclick = () => { if(!paused && !isTutorialBlocking()) openDaily(); };
+$('#btnSettings').onclick = () => { if(!paused && !isTutorialBlocking()) openSettings(); };
+$('#btnInvite').onclick = () => {
+  if(paused || isTutorialBlocking()) return;
+  vkSend('VKWebAppShowInviteBox').then(() => { toast(t('inviteSent'), '#7fd07f'); })
+    .catch(() => { toast(t('inviteUnavailable')); });
+};
+window.addEventListener('resize', () => { if(state) resize(); });
+window.addEventListener('orientationchange', () => setTimeout(() => { if(state) resize(); }, 250));
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', () => { if(state) resize(); });
+}
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => {
+  const now = Date.now();
+  if(now - lastTouchEnd < 300) e.preventDefault();
+  lastTouchEnd = now;
+}, {passive: false});
+
+/* ------------------------------- 17. ПОЛИФИЛЛ ----------------------------- */
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r){
+    if(typeof r === 'number') r = [r, r, r, r];
+    this.beginPath();
+    this.moveTo(x + r[0], y);
+    this.lineTo(x + w - r[1], y);
+    this.quadraticCurveTo(x + w, y, x + w, y + r[1]);
+    this.lineTo(x + w, y + h - r[2]);
+    this.quadraticCurveTo(x + w, y + h, x + w - r[2], y + h);
+    this.lineTo(x + r[3], y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - r[3]);
+    this.lineTo(x, y + r[0]);
+    this.quadraticCurveTo(x, y, x + r[0], y);
+    this.closePath();
+    return this;
+  };
+}
+
+/* ------------------------------- 18. ЗАПУСК ------------------------------- */
+initVK();
+boot();
+</script>
+</body>
+</html>
